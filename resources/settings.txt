@@ -1,6 +1,0 @@
-name=Undefined
-grade=9
-info=Undefined
-course=Undefined
-volumeIncr=-36.0
-speed=1.0
