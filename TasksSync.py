@@ -11,20 +11,20 @@ from github import Github
 # ============================================================
 
 # Base and data paths
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(exist_ok=True)
+base_dir = Path(__file__).resolve().parent
+data_dir = base_dir / "data"
+data_dir.mkdir(exist_ok=True)
 
 # Look for credentials in ./data/credentials.json, fallback to ./credentials.json
-CREDENTIALS_PATH = DATA_DIR / "credentials.json"
+CREDENTIALS_PATH = data_dir / "credentials.json"
 if not CREDENTIALS_PATH.exists():
-    alt = BASE_DIR / "credentials.json"
+    alt = base_dir / "credentials.json"
     if alt.exists():
         CREDENTIALS_PATH = alt
 
 # Token and output files
-TOKEN_PATH = DATA_DIR / "token.json"
-TASKS_JSON_PATH = BASE_DIR / "tasks.json"
+token_path = data_dir / "token.json"
+tasks_json_path = base_dir / "tasks.json"
 
 # Google Tasks API scope
 SCOPES = ["https://www.googleapis.com/auth/tasks.readonly"]
@@ -35,16 +35,16 @@ SCOPES = ["https://www.googleapis.com/auth/tasks.readonly"]
 
 creds = None
 
-if TOKEN_PATH.exists():
+if token_path.exists():
     # Reuse saved token
-    creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
+    creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
 else:
     # No token yet; need credentials.json to authorize
     if not CREDENTIALS_PATH.exists():
         raise FileNotFoundError(
-            f"❌ Google OAuth client secrets not found.\n"
+            f"Google OAuth client secrets not found.\n"
             f"Expected at: {CREDENTIALS_PATH}\n\n"
-            "➡️  Download an OAuth 2.0 Client ID (Desktop) JSON from Google Cloud Console "
+            "Download an OAuth 2.0 Client ID (Desktop) JSON from Google Cloud Console "
             "and save it as credentials.json in the data folder."
         )
 
@@ -53,7 +53,7 @@ else:
     creds = flow.run_local_server(port=0)
 
     # Save token for next time
-    with open(TOKEN_PATH, "w", encoding="utf-8") as f:
+    with open(token_path, "w", encoding="utf-8") as f:
         f.write(creds.to_json())
 
 # ============================================================
@@ -62,7 +62,7 @@ else:
 
 service = build("tasks", "v1", credentials=creds)
 
-print("✅ Connected to Google Tasks API.")
+print("Connected to Google Tasks API.")
 tasklists_resp = service.tasklists().list(maxResults=100).execute()
 tasklists = tasklists_resp.get("items", [])
 
@@ -96,16 +96,16 @@ for tl in tasklists:
     })
 
 # Save locally
-with open(TASKS_JSON_PATH, "w", encoding="utf-8") as f:
+with open(tasks_json_path, "w", encoding="utf-8") as f:
     json.dump(tasks_data, f, indent=2, ensure_ascii=False)
 
-print(f"💾 Saved tasks to {TASKS_JSON_PATH}")
+print(f"Saved tasks to {tasks_json_path}")
 
 # ============================================================
-# OPTIONAL: UPLOAD TO GITHUB
+# OPTIONAL: UPLOAD TO GITHUB (Added Due to confusion in app development)
 # ============================================================
 
-# To enable GitHub upload, set these environment variables:
+# To enable GitHub upload, set these environment variables: (NOT YET)
 #   GITHUB_TOKEN  = your personal access token (with repo scope)
 #   GITHUB_REPO   = "username/repository"
 #   GITHUB_PATH   = "folder/tasks.json" (optional; defaults to "tasks.json")
@@ -115,23 +115,23 @@ gh_repo_fullname = os.getenv("GITHUB_REPO")
 gh_repo_path = os.getenv("GITHUB_PATH", "tasks.json")
 
 if gh_token and gh_repo_fullname:
-    print("🔗 Connecting to GitHub...")
+    print("Connecting to GitHub...")
     gh = Github(gh_token)
     repo = gh.get_repo(gh_repo_fullname)
 
-    with open(TASKS_JSON_PATH, "r", encoding="utf-8") as f:
+    with open(tasks_json_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     try:
         # Try to update if file exists
         existing = repo.get_contents(gh_repo_path)
         repo.update_file(gh_repo_path, "Update tasks.json", content, existing.sha)
-        print(f"✅ Updated {gh_repo_path} in {gh_repo_fullname}")
+        print(f"Updated {gh_repo_path} in {gh_repo_fullname}")
     except Exception:
         # Otherwise, create new file
         repo.create_file(gh_repo_path, "Create tasks.json", content)
-        print(f"✅ Created {gh_repo_path} in {gh_repo_fullname}")
+        print(f"Created {gh_repo_path} in {gh_repo_fullname}")
 else:
-    print("⚠️  GitHub upload skipped — missing GITHUB_TOKEN or GITHUB_REPO.")
+    print("GitHub upload skipped — missing GITHUB_TOKEN or GITHUB_REPO.")
 
-print("🎉 Done! Your Google Tasks have been synced.")
+print("Done! Your Google Tasks have been synced.")
