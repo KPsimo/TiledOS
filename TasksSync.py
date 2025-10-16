@@ -10,24 +10,24 @@ from github import Github
 # CONFIGURATION
 # ============================================================
 
-# Base and data paths
-base_dir = Path(__file__).resolve().parent
-data_dir = base_dir / "data"
+# base and data paths
+base = Path(__file__).resolve().parent
+data_dir = base / "data"
 data_dir.mkdir(exist_ok=True)
 
 # Look for credentials in ./data/credentials.json, fallback to ./credentials.json
 CREDENTIALS_PATH = data_dir / "credentials.json"
 if not CREDENTIALS_PATH.exists():
-    alt = base_dir / "credentials.json"
+    alt = base / "credentials.json"
     if alt.exists():
-        CREDENTIALS_PATH = alt
+        CREDENTIALS_PATH = alt #need to check alternative because we might change credentials path
 
 # Token and output files
-token_path = data_dir / "token.json"
-tasks_json_path = base_dir / "tasks.json"
+TOKEN_PATH = data_dir / "token.json"
+TASKS_JSON_PATH = base / "tasks.json"
 
 # Google Tasks API scope
-SCOPES = ["https://www.googleapis.com/auth/tasks.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/tasks"] #used to be readonly but changed cuz we want to edit
 
 # ============================================================
 # AUTHENTICATION (Google)
@@ -35,9 +35,9 @@ SCOPES = ["https://www.googleapis.com/auth/tasks.readonly"]
 
 creds = None
 
-if token_path.exists():
+if TOKEN_PATH.exists():
     # Reuse saved token
-    creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+    creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), SCOPES)
 else:
     # No token yet; need credentials.json to authorize
     if not CREDENTIALS_PATH.exists():
@@ -53,7 +53,7 @@ else:
     creds = flow.run_local_server(port=0)
 
     # Save token for next time
-    with open(token_path, "w", encoding="utf-8") as f:
+    with open(TOKEN_PATH, "w", encoding="utf-8") as f:
         f.write(creds.to_json())
 
 # ============================================================
@@ -96,16 +96,16 @@ for tl in tasklists:
     })
 
 # Save locally
-with open(tasks_json_path, "w", encoding="utf-8") as f:
+with open(TASKS_JSON_PATH, "w", encoding="utf-8") as f:
     json.dump(tasks_data, f, indent=2, ensure_ascii=False)
 
-print(f"Saved tasks to {tasks_json_path}")
+print(f"Saved tasks to {TASKS_JSON_PATH}")
 
 # ============================================================
-# OPTIONAL: UPLOAD TO GITHUB (Added Due to confusion in app development)
+# OPTIONAL: UPLOAD TO GITHUB
 # ============================================================
 
-# To enable GitHub upload, set these environment variables: (NOT YET)
+# To enable GitHub upload, set these environment variables:
 #   GITHUB_TOKEN  = your personal access token (with repo scope)
 #   GITHUB_REPO   = "username/repository"
 #   GITHUB_PATH   = "folder/tasks.json" (optional; defaults to "tasks.json")
@@ -119,7 +119,7 @@ if gh_token and gh_repo_fullname:
     gh = Github(gh_token)
     repo = gh.get_repo(gh_repo_fullname)
 
-    with open(tasks_json_path, "r", encoding="utf-8") as f:
+    with open(TASKS_JSON_PATH, "r", encoding="utf-8") as f:
         content = f.read()
 
     try:
