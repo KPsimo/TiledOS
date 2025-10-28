@@ -1,3 +1,11 @@
+Pull from repo:
+
+git pull origin main
+
+-----------------------
+
+Push to repo:
+
 git add .
-git commit -m "work from arch - <describe what changed>"
+git commit -m "<describe what changed>"
 git push origin main
