@@ -4,11 +4,10 @@ from pathlib import Path
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from github import Github
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
+# ============= #
+# CONFIGURATION #
+# ============= #
 
 # base and data paths
 base = Path(__file__).resolve().parent
@@ -100,38 +99,3 @@ with open(TASKS_JSON_PATH, "w", encoding="utf-8") as f:
     json.dump(tasks_data, f, indent=2, ensure_ascii=False)
 
 print(f"Saved tasks to {TASKS_JSON_PATH}")
-
-# ============================================================
-# OPTIONAL: UPLOAD TO GITHUB
-# ============================================================
-
-# To enable GitHub upload, set these environment variables:
-#   GITHUB_TOKEN  = your personal access token (with repo scope)
-#   GITHUB_REPO   = "username/repository"
-#   GITHUB_PATH   = "folder/tasks.json" (optional; defaults to "tasks.json")
-
-gh_token = os.getenv("GITHUB_TOKEN")
-gh_repo_fullname = os.getenv("GITHUB_REPO")
-gh_repo_path = os.getenv("GITHUB_PATH", "tasks.json")
-
-if gh_token and gh_repo_fullname:
-    print("Connecting to GitHub...")
-    gh = Github(gh_token)
-    repo = gh.get_repo(gh_repo_fullname)
-
-    with open(TASKS_JSON_PATH, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    try:
-        # Try to update if file exists
-        existing = repo.get_contents(gh_repo_path)
-        repo.update_file(gh_repo_path, "Update tasks.json", content, existing.sha)
-        print(f"Updated {gh_repo_path} in {gh_repo_fullname}")
-    except Exception:
-        # Otherwise, create new file
-        repo.create_file(gh_repo_path, "Create tasks.json", content)
-        print(f"Created {gh_repo_path} in {gh_repo_fullname}")
-else:
-    print("GitHub upload skipped — missing GITHUB_TOKEN or GITHUB_REPO.")
-
-print("Done! Your Google Tasks have been synced.")

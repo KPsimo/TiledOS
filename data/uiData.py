@@ -10,4 +10,6 @@ backgroundColor = (10, 10, 10)
 widgetBackgroundColor = (30, 30, 30)
 textColor = (255, 255, 255)
 
+backgroundColorEditMode = (15, 15, 15)
+
 cornerRadius = 15

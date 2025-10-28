@@ -1,8 +1,11 @@
+# todo preferred size for widgets
+
 import pygame
 import json
 import os
 import data.uiData as uiData
 import widgets
+import time
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -33,61 +36,125 @@ def drawGrid(surface, color, cellSize, cellPadding, width, height):
         y += cellSize + cellPadding
     pygame.draw.line(surface, color, (0, height - 1), (width, height - 1))  # bottom edge
 
-if os.path.exists(widgetsPath):
-    with open(widgetsPath, "r") as f:
-        state = json.load(f)
-    clock_pos = tuple(state.get("clock", {}).get("pos", (0, 0)))
-    clock_size = state.get("clock", {}).get("size", [4, 2])
-    date_pos = tuple(state.get("date", {}).get("pos", (0, 2)))
-    date_size = state.get("date", {}).get("size", [4, 1])
-else:
-    clock_pos = (0, 0)
-    clock_size = [4, 2]
-    date_pos = (0, 2)
-    date_size = [4, 1]
+def addWidget(name, widget):
+    global screenWidgets
+    screenWidgets[name] = widget
 
-clockWidget = widgets.Clock(pos=clock_pos, width=clock_size[0], height=clock_size[1])
-dateWidget = widgets.Date(pos=date_pos, width=date_size[0], height=date_size[1])
+screenWidgets = {}
+
+addWidget("clock", widgets.Clock(pos=(0, 0), width=1, height=2))
+addWidget("clock", widgets.Clock(pos=(1, 5), width=1, height=2))
+addWidget("clock", widgets.Clock(pos=(2, 5), width=1, height=2))
+addWidget("clock", widgets.Clock(pos=(3, 5), width=1, height=2))
 
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight))
+pygame.display.set_caption("TileOS")
+
+clock = pygame.time.Clock()
 
 running = True
+
+draggingWidget = None
+dragOffsetPixels = (0, 0)
+resizingWidget = None
+resizeStartPos = None
+
+editMode = False
+editModeHoldTime = .75
+mouseDownStartTime = None
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
-        
-        if event.type == pygame.KEYDOWN:
-            mods = pygame.key.get_mods()
+            running = False   
 
-            saveWidgetState(clockWidget, dateWidget)
+        if editMode:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = event.pos
+                for widget in screenWidgets.values():
+                    wPos = widget.getActualPosition()
+                    wSize = widget.getActualSize()
+                    resizeHandleSize = 40
 
-            if event.key == pygame.K_ESCAPE:
-                running = False
-            if event.key == pygame.K_RIGHT:
-                clockWidget.setSize(clockWidget.width + 1, clockWidget.height)
-            if event.key == pygame.K_LEFT:
-                clockWidget.setSize(max(1, clockWidget.width - 1), clockWidget.height)
-            elif event.key == pygame.K_UP:
-                clockWidget.setSize(clockWidget.width, max(1, clockWidget.height - 1))
-            elif event.key == pygame.K_DOWN:
-                clockWidget.setSize(clockWidget.width, clockWidget.height + 1)
-            if event.key == pygame.K_d:
-                clockWidget.setPosition(clockWidget.pos[0] + 1, clockWidget.pos[1])
-            if event.key == pygame.K_a:
-                clockWidget.setPosition(max(0, clockWidget.pos[0] - 1), clockWidget.pos[1])
-            elif event.key == pygame.K_w:
-                clockWidget.setPosition(clockWidget.pos[0], max(0, clockWidget.pos[1] - 1))
-            elif event.key == pygame.K_s:
-                clockWidget.setPosition(clockWidget.pos[0], clockWidget.pos[1] + 1)
+                    bottomRight = (wPos[0] + wSize[0], wPos[1] + wSize[1])
 
-    screen.fill(uiData.backgroundColor)
-    drawGrid(screen, (50, 50, 50), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
+                    if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
+                        and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
+                        resizingWidget = widget
+                        resizeStartPos = (mx + (uiData.cellSize) / 4, my + (uiData.cellSize) / 4)
+                        break
 
-    clockWidget.tick(screen)
-    dateWidget.tick(screen)
+                    elif wPos[0] <= mx <= wPos[0] + wSize[0] and wPos[1] <= my <= wPos[1] + wSize[1]:
+                        draggingWidget = widget
+                        dragOffsetPixels = ((mx - wPos[0]) + uiData.cellSize / 4, (my - wPos[1]) + uiData.cellSize / 4)
+                        break
+
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                draggingWidget = None
+                resizingWidget = None
+                resizeStartPos = None
+
+            elif event.type == pygame.MOUSEMOTION:
+                if draggingWidget is not None:
+                    mx, my = event.pos
+                    newLeft = mx - dragOffsetPixels[0]
+                    newTop = my - dragOffsetPixels[1]
+                    cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
+                    newX = newLeft // cellSizeWithPadding
+                    newY = newTop // cellSizeWithPadding
+                    newX = max(0, newX)
+                    newY = max(0, newY)
+                    draggingWidget.setPosition(newX, newY)
+
+                elif resizingWidget is not None:
+                    mx, my = event.pos
+                    wPos = resizingWidget.getActualPosition()
+                    cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
+                    newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
+                    newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
+                    resizingWidget.setSize(newWidthCells, newHeightCells)
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouseDownStartTime = time.time()
+            mouseDownPos = event.pos
+
+        elif event.type == pygame.MOUSEMOTION:
+            if mouseDownStartTime is not None:
+                mx, my = event.pos
+                dx = mx - mouseDownPos[0]
+                dy = my - mouseDownPos[1]
+                if abs(dx) > 6 or abs(dy) > 6:
+                    mouseDownStartTime = None
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            mouseDownStartTime = None
+
+    if mouseDownStartTime is not None:
+        elapsed = time.time() - mouseDownStartTime
+        if elapsed >= editModeHoldTime:
+            editMode = not editMode
+            mouseDownStartTime = None
+
+    if editMode: 
+        screen.fill(uiData.backgroundColorEditMode)
+        drawGrid(screen, (50, 50, 50), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
+    else: 
+        screen.fill(uiData.backgroundColor)
+
+    for widget in screenWidgets.values():
+        widget.tick(screen)
+
+        if editMode:
+            wPos = widget.getActualPosition()
+            wSize = widget.getActualSize()
+            pygame.draw.circle(
+                screen,
+                (180, 180, 180),
+                (int(wPos[0] + wSize[0] - 5), int(wPos[1] + wSize[1] - 5)),
+                5
+            )
 
     pygame.display.flip()
+    clock.tick(60)
