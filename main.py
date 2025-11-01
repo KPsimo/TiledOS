@@ -1,10 +1,9 @@
-# todo preferred size for widgets
-
 import pygame
 import json
 import os
 import data.uiData as uiData
 import widgets
+import components
 import time
 
 widgetsPath = os.path.join("data", "widgets.json")
@@ -42,10 +41,9 @@ def addWidget(name, widget):
 
 screenWidgets = {}
 
-addWidget("clock", widgets.Clock(pos=(0, 0), width=1, height=2))
-addWidget("clock", widgets.Clock(pos=(1, 5), width=1, height=2))
-addWidget("clock", widgets.Clock(pos=(2, 5), width=1, height=2))
-addWidget("clock", widgets.Clock(pos=(3, 5), width=1, height=2))
+addWidget("clock", widgets.Clock(pos=(0, 0), width=5, height=2))
+
+panel = components.FloatingPanel(300, 200, (100, 100))
 
 pygame.init()
 pygame.font.init()
@@ -116,6 +114,9 @@ while running:
                     newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
                     resizingWidget.setSize(newWidthCells, newHeightCells)
 
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_0:
+                addWidget("date", widgets.Date(pos=(0, 0), width=5, height=2))
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouseDownStartTime = time.time()
             mouseDownPos = event.pos
@@ -155,6 +156,8 @@ while running:
                 (int(wPos[0] + wSize[0] - 5), int(wPos[1] + wSize[1] - 5)),
                 5
             )
+    
+    panel.tick(screen)
 
     pygame.display.flip()
     clock.tick(60)

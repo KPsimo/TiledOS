@@ -1,16 +1,9 @@
 import pygame
 import time
 import data.uiData as uiData
+import uiTools
 import math
 
-# -- Helper Functions -- #
-
-def makeRoundedSurface(size, radius, color):
-    scale = 3
-    big = pygame.Surface((size[0] * scale, size[1] * scale), pygame.SRCALPHA)
-    big.fill((0, 0, 0, 0))
-    pygame.draw.rect(big, color, big.get_rect(), border_radius=radius * scale)
-    return pygame.transform.smoothscale(big, size)
 
 # --- Widget Template --- #
 
@@ -65,7 +58,7 @@ class Widget:
 
     def draw(self, screen):
         self.surface.fill((0, 0, 0, 0))
-        roundedBg = makeRoundedSurface(
+        roundedBg = uiTools.makeRoundedSurface(
             self.surface.get_size(),
             uiData.cornerRadius,
             uiData.widgetBackgroundColor
