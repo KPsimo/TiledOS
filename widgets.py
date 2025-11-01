@@ -4,7 +4,6 @@ import data.uiData as uiData
 import uiTools
 import math
 
-
 # --- Widget Template --- #
 
 class Widget:
@@ -145,3 +144,8 @@ class Date(Widget):
         text = self.fontSmall.render(dateStr, True, uiData.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
+
+allWidgets = {
+    "Clock": Clock(),
+    "Date": Date(),
+}

@@ -7,7 +7,11 @@ cellSize = 110 * quickScale
 cellPadding = 10 * quickScale
 
 backgroundColor = (10, 10, 10)
+
 widgetBackgroundColor = (30, 30, 30)
+
+primaryTransparentColor = (widgetBackgroundColor[0] + 10, widgetBackgroundColor[1] + 10, widgetBackgroundColor[2] + 10, 200)
+
 textColor = (255, 255, 255)
 
 backgroundColorEditMode = (15, 15, 15)
