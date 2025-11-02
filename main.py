@@ -39,6 +39,17 @@ def addWidget(name, widget):
     global screenWidgets
     screenWidgets[name] = widget
 
+def checkCollision(testWidget, newPos, newSize):
+    testRect = pygame.Rect(newPos[0], newPos[1], newSize[0], newSize[1])
+    
+    for widget in screenWidgets.values():
+        if widget == testWidget:
+            continue
+        widgetRect = pygame.Rect(widget.pos[0], widget.pos[1], widget.width, widget.height)
+        if testRect.colliderect(widgetRect):
+            return True
+    return False
+
 screenWidgets = {}
 
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
@@ -72,7 +83,14 @@ while running:
         if True:
             widgetPaletteOut = widgetPalette.handleEvent(event)
             if widgetPaletteOut is not None:
-                addWidget(list(widgets.allWidgets.keys())[widgetPaletteOut].lower(), widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
+                widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut].lower()
+                if widgetName in screenWidgets:
+                    del screenWidgets[widgetName]
+                else:
+                    addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                editMode = not editMode
 
         # check edit mode events
         if True:
@@ -113,7 +131,8 @@ while running:
                             newY = newTop // cellSizeWithPadding
                             newX = max(0, newX)
                             newY = max(0, newY)
-                            draggingWidget.setPosition(newX, newY)
+                            if not checkCollision(draggingWidget, (newX, newY), (draggingWidget.width, draggingWidget.height)):
+                                draggingWidget.setPosition(newX, newY)
 
                         elif resizingWidget is not None:
                             mx, my = event.pos
@@ -121,7 +140,8 @@ while running:
                             cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
                             newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
                             newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
-                            resizingWidget.setSize(newWidthCells, newHeightCells)
+                            if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
+                                resizingWidget.setSize(newWidthCells, newHeightCells)
 
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_0:
                         addWidget("date", widgets.Date(pos=(0, 0), width=5, height=2))
@@ -141,6 +161,8 @@ while running:
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mouseDownStartTime = None
 
+    # event check end
+
     if mouseDownStartTime is not None:
         elapsed = time.time() - mouseDownStartTime
         if elapsed >= editModeHoldTime:
@@ -154,6 +176,13 @@ while running:
         screen.fill(uiData.backgroundColor)
 
     # draw backmost layer
+
+    if draggingWidget is not None: draggingWidget.setColor(uiData.widgetBackgroundColorProgression)
+    elif resizingWidget is not None: resizingWidget.setColor(uiData.widgetBackgroundColorProgression)
+
+    if draggingWidget is None and resizingWidget is None:
+        for widget in screenWidgets.values():
+            widget.setColor(uiData.widgetBackgroundColor)
 
     for widget in screenWidgets.values():
         widget.tick(screen)

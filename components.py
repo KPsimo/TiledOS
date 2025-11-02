@@ -79,10 +79,14 @@ class widgetPallettePanel(FloatingPanel):
     def __init__(self, width, height, pos):
         super().__init__(width, height, pos)
 
+        self.height = 70 + len(widgets.allWidgets) * 60 + 10
+        self._updateSurface()
+
         self.fontTitle = pygame.font.Font('resources/outfit.ttf', 40)
         self.fontSmall = pygame.font.Font('resources/outfit.ttf', 35)
 
     def drawContent(self):
+
         titleSurface = self.fontTitle.render("Widget Pallette", True, uiData.textColor)
         self.surface.blit(titleSurface, (10, 10))
 
