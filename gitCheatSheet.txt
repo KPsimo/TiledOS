@@ -9,3 +9,11 @@ Push to repo:
 git add .
 git commit -m "<describe what changed>"
 git push origin main
+
+-----------------------
+
+Override local with remote:
+
+git checkout main
+git fetch origin
+git reset --hard origin/main
