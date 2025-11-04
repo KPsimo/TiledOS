@@ -27,6 +27,12 @@ class Widget:
 
         self.color = uiData.widgetBackgroundColor
 
+        pygame.font.init()
+        self.fonts = []
+
+        for size in [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]:
+            self.fonts.append(pygame.font.Font('resources/outfit.ttf', size))
+
         self._updateSurface()
 
     def _updateSurface(self):
@@ -77,6 +83,10 @@ class Widget:
         # To be overridden by child classes
         pass
 
+    def update(self):
+        # To be overridden by child classes
+        pass
+
     def tick(self, screen):
         # position easing
         if not self.posSnapped:
@@ -106,6 +116,7 @@ class Widget:
             # recreate surface to match new size
             self._updateSurface()
 
+        self.update()
         self.draw(screen)
 
 # --- Widgets --- #
@@ -117,8 +128,6 @@ class Clock(Widget):
         self.hours = self.currentTime.tm_hour
         self.minutes = self.currentTime.tm_min
         self.seconds = self.currentTime.tm_sec
-        pygame.font.init()
-        self.fontSmall = pygame.font.Font('resources/outfit.ttf', 50)
 
     def update(self):
         self.currentTime = time.localtime()
@@ -128,7 +137,7 @@ class Clock(Widget):
 
     def drawContent(self):
         timeStr = f"{self.hours:02}:{self.minutes:02}:{self.seconds:02}"
-        text = self.fontSmall.render(timeStr, True, uiData.textColor)
+        text = self.fonts[int(self.height-1)].render(timeStr, True, uiData.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
 
@@ -138,15 +147,13 @@ class Date(Widget):
     def __init__(self, width=3, height=1, pos=(0, 1)):
         super().__init__(width, height, pos)
         self.currentDate = time.localtime()
-        pygame.font.init()
-        self.fontSmall = pygame.font.Font('resources/outfit.ttf', 50)
 
     def update(self):
         self.currentDate = time.localtime()
 
     def drawContent(self):
         dateStr = f"{self.currentDate.tm_year:04}-{self.currentDate.tm_mon:02}-{self.currentDate.tm_mday:02}"
-        text = self.fontSmall.render(dateStr, True, uiData.textColor)
+        text = self.fonts[int(self.height-1)].render(dateStr, True, uiData.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
 
