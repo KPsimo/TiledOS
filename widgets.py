@@ -53,6 +53,12 @@ class Widget:
             self.pos[1] * (uiData.cellSize + uiData.cellPadding) + uiData.cellPadding // 2
         )
 
+    def getSize(self):
+        return (self.width, self.height)
+    
+    def getPos(self):
+        return (int(self.pos[0]), int(self.pos[1]))
+
     def setSize(self, width, height):
         self.targetSize = (float(width), float(height))
         self.width = width

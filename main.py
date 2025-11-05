@@ -8,19 +8,35 @@ import time
 
 widgetsPath = os.path.join("data", "widgets.json")
 
-def saveWidgetState(clockWidget, dateWidget):
-    state = {
-        "clock": {
-            "pos": clockWidget.pos,
-            "size": [clockWidget.width, clockWidget.height]
-        },
-        "date": {
-            "pos": dateWidget.pos,
-            "size": [dateWidget.width, dateWidget.height]
+def addWidget(name, widget):
+    global screenWidgets
+    screenWidgets[name] = widget
+
+def saveWidgetsState():
+    state = {}
+
+    for name, widget in screenWidgets.items():
+        state[name] = {
+            "pos": widget.getPos(),
+            "width": widget.getSize()[0],
+            "height": widget.getSize()[1]
         }
-    }
+
     with open(widgetsPath, "w") as f:
         json.dump(state, f, indent=4)
+
+def loadWidgetsState():
+    try:
+        with open(widgetsPath, "r") as f:
+            savedState = json.load(f)
+            for name, state in savedState.items():
+                print(f"Loading widget {name} at pos {state['pos']} size ({state['width']}, {state['height']})")
+                widget = widgets.allWidgets[name]
+                widget.setPosition(state["pos"][0], state["pos"][1])
+                widget.setSize(state["width"], state["height"])
+                addWidget(name, widget)
+    except FileNotFoundError:
+        pass
 
 def drawGrid(surface, color, cellSize, cellPadding, width, height):
     x = 0
@@ -35,10 +51,6 @@ def drawGrid(surface, color, cellSize, cellPadding, width, height):
         y += cellSize + cellPadding
     pygame.draw.line(surface, color, (0, height - 1), (width, height - 1))  # bottom edge
 
-def addWidget(name, widget):
-    global screenWidgets
-    screenWidgets[name] = widget
-
 def checkCollision(testWidget, newPos, newSize):
     testRect = pygame.Rect(newPos[0], newPos[1], newSize[0], newSize[1])
     
@@ -51,6 +63,8 @@ def checkCollision(testWidget, newPos, newSize):
     return False
 
 screenWidgets = {}
+
+loadWidgetsState()
 
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
@@ -83,7 +97,7 @@ while running:
         if True:
             widgetPaletteOut = widgetPalette.handleEvent(event)
             if widgetPaletteOut is not None:
-                widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut].lower()
+                widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
                 if widgetName in screenWidgets:
                     del screenWidgets[widgetName]
                 else:
@@ -167,6 +181,7 @@ while running:
         elapsed = time.time() - mouseDownStartTime
         if elapsed >= editModeHoldTime:
             editMode = not editMode
+            if not editMode: saveWidgetsState()
             mouseDownStartTime = None
 
     if editMode: 
