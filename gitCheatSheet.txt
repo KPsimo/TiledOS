@@ -17,3 +17,7 @@ Override local with remote:
 git checkout main
 git fetch origin
 git reset --hard origin/main
+
+Abbort Push:
+git status (make sure you have unmerged paths)
+git merge --abort
