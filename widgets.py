@@ -1,3 +1,4 @@
+
 import pygame
 import time
 import data.uiData as uiData
@@ -127,6 +128,18 @@ class Widget:
 
 # --- Widgets --- #
 
+class Calendar(Widget):
+    def __init__(self, width=1, height=1, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        pygame.font.init()
+        self.font = pygame.font.Font('resources/outfit.ttf', 50)
+
+    def drawContent(self):
+        text = self.font.render("Calendar", True, uiData.textColor)
+        text_rect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+        self.surface.blit(text, text_rect)
+
+
 class Clock(Widget):
     def __init__(self, width=3, height=1, pos=(0, 0)):
         super().__init__(width, height, pos)
@@ -162,7 +175,7 @@ class Date(Widget):
         text = self.fonts[int(self.height-1)].render(dateStr, True, uiData.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
-
+        
 class TiledLabel(Widget):
     def __init__(self, width=2, height=1, pos=(0, 2)):
         super().__init__(width, height, pos)
@@ -202,5 +215,6 @@ allWidgets = {
     "Clock": Clock(),
     "Date": Date(),
     "Label": TiledLabel(),
-    "Spinning Square": SpinningSquare()
+    "Spinning Square": SpinningSquare(),
+    "Calendar": Calendar()
 }
