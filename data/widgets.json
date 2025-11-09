@@ -2,9 +2,17 @@
     "Clock": {
         "pos": [
             4,
-            1
+            2
         ],
-        "width": 3,
-        "height": 1
+        "width": 5.0,
+        "height": 2.0
+    },
+    "Date": {
+        "pos": [
+            5,
+            4
+        ],
+        "width": 5.0,
+        "height": 2.0
     }
 }
