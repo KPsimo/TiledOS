@@ -4,6 +4,8 @@ import data.uiData as uiData
 import uiTools
 import widgets
 
+# --- Panel Types --- #
+
 class FloatingPanel:
     def __init__(self, width, height, pos):
         self.width = width
@@ -18,7 +20,6 @@ class FloatingPanel:
         self._updateSurface()
 
     def _updateSurface(self):
-
         self.surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
 
     def getSize(self):
@@ -75,6 +76,30 @@ class FloatingPanel:
                 newY = my - self.dragOffset[1]
                 self.setPosition(newX, newY)
 
+class CenteredPanel(FloatingPanel):
+    def __init__(self, width, height):
+        screenWidth, screenHeight = uiData.screenWidth, uiData.screenHeight
+        pos = ((screenWidth - width) // 2, (screenHeight - height) // 2)
+        super().__init__(width, height, pos)
+    
+    def draw(self, screen):
+        self.surface.fill((0, 0, 0, 0))
+
+        roundedBg = uiTools.makeRoundedSurface(
+            self.surface.get_size(),
+            uiData.cornerRadius,
+            uiData.widgetBackgroundColor
+        )
+
+        self.surface.blit(roundedBg, (0, 0))
+        self.drawContent()
+        screen.blit(self.surface, self.pos)
+
+    def handleEvent(self, event):
+        return None
+
+# --- Panels --- #
+
 class widgetPallettePanel(FloatingPanel):
     def __init__(self, width, height, pos):
         super().__init__(width, height, pos)
@@ -108,3 +133,25 @@ class widgetPallettePanel(FloatingPanel):
                     return index
 
         return None
+    
+class actionPanel(CenteredPanel):
+    def __init__(self):
+        super().__init__(400, 200)
+
+    def drawContent(self):
+        actionText = "Action Panel"
+        font = pygame.font.Font('resources/outfit.ttf', 50)
+        textSurface = font.render(actionText, True, uiData.textColor)
+        textRect = textSurface.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+        self.surface.blit(textSurface, textRect)
+
+    def handleEvent(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            px, py = self.pos
+            sx, sy = self.getSize()
+            if px <= mx <= px + sx and py <= my <= py + sy:
+                self.clicked(mx, my)
+
+    def clicked(self, mx, my):
+        pass

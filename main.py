@@ -66,6 +66,7 @@ screenWidgets = {}
 
 loadWidgetsState()
 
+actionPanel = components.actionPanel()
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
 pygame.init()
@@ -83,7 +84,9 @@ resizingWidget = None
 resizeStartPos = None
 
 editMode = False
-editModeHoldTime = .75
+
+showActionPanel = False
+actionPanelHoldTime = .75
 mouseDownStartTime = None
 
 tEditModeBackgroundColor = 0
@@ -181,13 +184,13 @@ while running:
 
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mouseDownStartTime = None
-
     # event check end
 
+    # edit mode hold check
     if mouseDownStartTime is not None:
         elapsed = time.time() - mouseDownStartTime
-        if elapsed >= editModeHoldTime:
-            editMode = not editMode
+        if elapsed >= actionPanelHoldTime:
+            showActionPanel = not showActionPanel
             if not editMode: saveWidgetsState()
             mouseDownStartTime = None
 
@@ -195,7 +198,7 @@ while running:
     elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
 
     if tEditModeBackgroundColor < 0: tEditModeBackgroundColor = 0
-    
+
     screen.fill(
         uiTools.interpolateColors(uiData.backgroundColor,
                                   uiData.backgroundColorEditMode,
@@ -206,17 +209,6 @@ while running:
             uiData.backgroundColor),
             (50, 50, 50),
             tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
-
-    print("BG", uiTools.interpolateColors(uiData.backgroundColor,
-                                  uiData.backgroundColorEditMode,
-                                  tEditModeBackgroundColor))
-    
-    print("GRID", uiTools.interpolateColors((
-            uiData.backgroundColor),
-            (50, 50, 50),
-            tEditModeBackgroundColor))
-
-    print("T", tEditModeBackgroundColor)
 
     # draw backmost layer
 
@@ -241,8 +233,9 @@ while running:
             )
     
     # draw frontmost layer
-    if editMode:
-        widgetPalette.tick(screen)
+    if editMode: widgetPalette.tick(screen)
+
+    if showActionPanel: actionPanel.tick(screen)
 
     pygame.display.flip()
     clock.tick(60)
