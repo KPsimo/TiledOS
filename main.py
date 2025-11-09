@@ -193,15 +193,30 @@ while running:
 
     if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
     elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
+
+    if tEditModeBackgroundColor < 0: tEditModeBackgroundColor = 0
     
     screen.fill(
         uiTools.interpolateColors(uiData.backgroundColor,
                                   uiData.backgroundColorEditMode,
                                   tEditModeBackgroundColor))
 
-    drawGrid(screen,
-             uiTools.interpolateColors((uiData.backgroundColor), (50, 50, 50, 100), tEditModeBackgroundColor),
-             uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
+    if uiTools.interpolateColors((uiData.backgroundColor), (50, 50, 50, 100), tEditModeBackgroundColor) != (0, 0, 0):
+        drawGrid(screen, uiTools.interpolateColors((
+            uiData.backgroundColor),
+            (50, 50, 50),
+            tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
+
+    print("BG", uiTools.interpolateColors(uiData.backgroundColor,
+                                  uiData.backgroundColorEditMode,
+                                  tEditModeBackgroundColor))
+    
+    print("GRID", uiTools.interpolateColors((
+            uiData.backgroundColor),
+            (50, 50, 50),
+            tEditModeBackgroundColor))
+
+    print("T", tEditModeBackgroundColor)
 
     # draw backmost layer
 

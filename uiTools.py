@@ -12,4 +12,7 @@ def interpolateColors(startColor, endColor, t):
     g = int(startColor[1] + (endColor[1] - startColor[1]) * t)
     b = int(startColor[2] + (endColor[2] - startColor[2]) * t)
 
+    if t == 0: return startColor
+    if t == 1: return endColor
+
     return (r, g, b)
