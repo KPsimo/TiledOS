@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import data.uiData as uiData
+import uiTools
 import widgets
 import components
 import time
@@ -30,7 +31,6 @@ def loadWidgetsState():
         with open(widgetsPath, "r") as f:
             savedState = json.load(f)
             for name, state in savedState.items():
-                print(f"Loading widget {name} at pos {state['pos']} size ({state['width']}, {state['height']})")
                 widget = widgets.allWidgets[name]
                 widget.setPosition(state["pos"][0], state["pos"][1])
                 widget.setSize(state["width"], state["height"])
@@ -86,6 +86,8 @@ editMode = False
 editModeHoldTime = .75
 mouseDownStartTime = None
 
+tEditModeBackgroundColor = 0
+
 while running:
     for event in pygame.event.get():
         # check quit
@@ -93,18 +95,24 @@ while running:
             running = False   
 
         # check normal events 
-
         if True:
-            widgetPaletteOut = widgetPalette.handleEvent(event)
-            if widgetPaletteOut is not None:
-                widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
-                if widgetName in screenWidgets:
-                    del screenWidgets[widgetName]
-                else:
-                    addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
+            if editMode:
+                widgetPaletteOut = widgetPalette.handleEvent(event)
+                if widgetPaletteOut is not None:
+                    widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
+                    if widgetName in screenWidgets:
+                        del screenWidgets[widgetName]
+                    else:
+                        addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 editMode = not editMode
+                if not editMode:
+                    saveWidgetsState()
+
+            if not editMode:
+                for widget in screenWidgets.values():
+                    widget.handleEvent(event)
 
         # check edit mode events
         if True:
@@ -184,11 +192,16 @@ while running:
             if not editMode: saveWidgetsState()
             mouseDownStartTime = None
 
-    if editMode: 
-        screen.fill(uiData.backgroundColorEditMode)
-        drawGrid(screen, (50, 50, 50), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
-    else: 
-        screen.fill(uiData.backgroundColor)
+    if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
+    elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
+
+    drawGrid(screen,
+             uiTools.interpolateColors(uiData.backgroundColor, (50, 50, 50), tEditModeBackgroundColor),
+             uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
+    screen.fill(
+        uiTools.interpolateColors(uiData.backgroundColor,
+                                  uiData.backgroundColorEditMode,
+                                  tEditModeBackgroundColor))
 
     # draw backmost layer
 

@@ -125,6 +125,18 @@ class Widget:
         self.update()
         self.draw(screen)
 
+    def handleEvent(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mx, my = event.pos
+            px, py = self.getActualPosition()
+            sx, sy = self.getActualSize()
+            if px <= mx <= px + sx and py <= my <= py + sy:
+                self.clicked(mx, my)
+
+    def clicked(self, mx, my):
+        # To be overridden by child classes
+        pass
+
 # --- Widgets --- #
 
 class Clock(Widget):
@@ -153,15 +165,23 @@ class Date(Widget):
     def __init__(self, width=3, height=1, pos=(0, 1)):
         super().__init__(width, height, pos)
         self.currentDate = time.localtime()
+        self.style = 0
 
     def update(self):
         self.currentDate = time.localtime()
 
     def drawContent(self):
-        dateStr = f"{self.currentDate.tm_year:04}-{self.currentDate.tm_mon:02}-{self.currentDate.tm_mday:02}"
+        if self.style == 0: dateStr = f"{self.currentDate.tm_year:04}-{self.currentDate.tm_mon:02}-{self.currentDate.tm_mday:02}"
+        if self.style == 1: dateStr = f"{self.currentDate.tm_mon:02}/{self.currentDate.tm_mday:02}"
+        
         text = self.fonts[int(self.height-1)].render(dateStr, True, uiData.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+        
         self.surface.blit(text, textRect)
+
+    def clicked(self, mx, my):
+        if self.style == 0: self.style = 1
+        elif self.style == 1: self.style = 0
 
 class TiledLabel(Widget):
     def __init__(self, width=2, height=1, pos=(0, 2)):
@@ -197,6 +217,9 @@ class SpinningSquare(Widget):
         rotated = pygame.transform.rotate(sq, self.angle)
         rrect = rotated.get_rect(center=(sw // 2, sh // 2))
         self.surface.blit(rotated, rrect)
+    
+    def clicked(self, mx, my):
+        self.speed += .05
 
 allWidgets = {
     "Clock": Clock(),
