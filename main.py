@@ -130,12 +130,12 @@ while running:
                             if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
                                 and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
                                 resizingWidget = widget
-                                resizeStartPos = (mx + (uiData.cellSize) / 4, my + (uiData.cellSize) / 4)
+                                resizeStartPos = (mx - uiData.cellSize, my - uiData.cellSize)
                                 break
 
                             elif wPos[0] <= mx <= wPos[0] + wSize[0] and wPos[1] <= my <= wPos[1] + wSize[1]:
                                 draggingWidget = widget
-                                dragOffsetPixels = ((mx - wPos[0]) + uiData.cellSize / 4, (my - wPos[1]) + uiData.cellSize / 4)
+                                dragOffsetPixels = ((mx - wPos[0]) - uiData.cellSize/2, (my - wPos[1]) - uiData.cellSize/2)
                                 break
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -158,15 +158,14 @@ while running:
 
                         elif resizingWidget is not None:
                             mx, my = event.pos
+                            mx += uiData.cellSize // 2
+                            my += uiData.cellSize // 2
                             wPos = resizingWidget.getActualPosition()
                             cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
                             newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
                             newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
                             if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
                                 resizingWidget.setSize(newWidthCells, newHeightCells)
-
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_0:
-                        addWidget("date", widgets.Date(pos=(0, 0), width=5, height=2))
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouseDownStartTime = time.time()
@@ -194,14 +193,15 @@ while running:
 
     if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
     elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
-
-    drawGrid(screen,
-             uiTools.interpolateColors(uiData.backgroundColor, (50, 50, 50), tEditModeBackgroundColor),
-             uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
+    
     screen.fill(
         uiTools.interpolateColors(uiData.backgroundColor,
                                   uiData.backgroundColorEditMode,
                                   tEditModeBackgroundColor))
+
+    drawGrid(screen,
+             uiTools.interpolateColors((uiData.backgroundColor), (50, 50, 50, 100), tEditModeBackgroundColor),
+             uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
 
     # draw backmost layer
 
