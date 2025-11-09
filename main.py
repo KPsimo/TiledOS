@@ -35,7 +35,7 @@ def loadWidgetsState():
                 widget.setPosition(state["pos"][0], state["pos"][1])
                 widget.setSize(state["width"], state["height"])
                 addWidget(name, widget)
-    except FileNotFoundError:
+    except:
         pass
 
 def drawGrid(surface, color, cellSize, cellPadding, width, height):
