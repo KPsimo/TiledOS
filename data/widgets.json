@@ -1,32 +1,32 @@
 {
     "Date": {
         "pos": [
-            2,
-            1
+            5,
+            2
         ],
         "width": 5.0,
         "height": 2.0
     },
     "Label": {
         "pos": [
-            7,
-            2
+            8,
+            4
         ],
         "width": 3.0,
         "height": 1
     },
     "Spinning Square": {
         "pos": [
-            3,
-            3
+            4,
+            4
         ],
         "width": 2.0,
         "height": 3.0
     },
     "Clock": {
         "pos": [
-            5,
-            3
+            6,
+            5
         ],
         "width": 7.0,
         "height": 2.0
