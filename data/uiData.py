@@ -16,6 +16,6 @@ primaryTransparentColor = (widgetBackgroundColor[0] + 10, widgetBackgroundColor[
 
 textColor = (255, 255, 255)
 
-backgroundColorEditMode = (15, 15, 15)
+backgroundColorEditMode = (20, 20, 22)
 
 cornerRadius = 15

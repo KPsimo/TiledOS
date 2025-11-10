@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import data.uiData as uiData
+import uiTools
 import widgets
 import components
 import time
@@ -30,12 +31,11 @@ def loadWidgetsState():
         with open(widgetsPath, "r") as f:
             savedState = json.load(f)
             for name, state in savedState.items():
-                print(f"Loading widget {name} at pos {state['pos']} size ({state['width']}, {state['height']})")
                 widget = widgets.allWidgets[name]
                 widget.setPosition(state["pos"][0], state["pos"][1])
                 widget.setSize(state["width"], state["height"])
                 addWidget(name, widget)
-    except FileNotFoundError:
+    except:
         pass
 
 def drawGrid(surface, color, cellSize, cellPadding, width, height):
@@ -66,6 +66,7 @@ screenWidgets = {}
 
 loadWidgetsState()
 
+actionPanel = components.actionPanel()
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
 pygame.init()
@@ -83,8 +84,12 @@ resizingWidget = None
 resizeStartPos = None
 
 editMode = False
-editModeHoldTime = .75
+
+showActionPanel = False
+actionPanelHoldTime = .75
 mouseDownStartTime = None
+
+tEditModeBackgroundColor = 0
 
 while running:
     for event in pygame.event.get():
@@ -93,18 +98,24 @@ while running:
             running = False   
 
         # check normal events 
-
         if True:
-            widgetPaletteOut = widgetPalette.handleEvent(event)
-            if widgetPaletteOut is not None:
-                widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
-                if widgetName in screenWidgets:
-                    del screenWidgets[widgetName]
-                else:
-                    addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
+            if editMode:
+                widgetPaletteOut = widgetPalette.handleEvent(event)
+                if widgetPaletteOut is not None:
+                    widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
+                    if widgetName in screenWidgets:
+                        del screenWidgets[widgetName]
+                    else:
+                        addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                 editMode = not editMode
+                if not editMode:
+                    saveWidgetsState()
+
+            if not editMode:
+                for widget in screenWidgets.values():
+                    widget.handleEvent(event)
 
         # check edit mode events
         if True:
@@ -122,12 +133,12 @@ while running:
                             if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
                                 and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
                                 resizingWidget = widget
-                                resizeStartPos = (mx + (uiData.cellSize) / 4, my + (uiData.cellSize) / 4)
+                                resizeStartPos = (mx - uiData.cellSize, my - uiData.cellSize)
                                 break
 
                             elif wPos[0] <= mx <= wPos[0] + wSize[0] and wPos[1] <= my <= wPos[1] + wSize[1]:
                                 draggingWidget = widget
-                                dragOffsetPixels = ((mx - wPos[0]) + uiData.cellSize / 4, (my - wPos[1]) + uiData.cellSize / 4)
+                                dragOffsetPixels = ((mx - wPos[0]) - uiData.cellSize/2, (my - wPos[1]) - uiData.cellSize/2)
                                 break
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -150,15 +161,14 @@ while running:
 
                         elif resizingWidget is not None:
                             mx, my = event.pos
+                            mx += uiData.cellSize // 2
+                            my += uiData.cellSize // 2
                             wPos = resizingWidget.getActualPosition()
                             cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
                             newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
                             newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
                             if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
                                 resizingWidget.setSize(newWidthCells, newHeightCells)
-
-                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_0:
-                        addWidget("date", widgets.Date(pos=(0, 0), width=5, height=2))
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouseDownStartTime = time.time()
@@ -174,21 +184,31 @@ while running:
 
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mouseDownStartTime = None
-
     # event check end
 
+    # edit mode hold check
     if mouseDownStartTime is not None:
         elapsed = time.time() - mouseDownStartTime
-        if elapsed >= editModeHoldTime:
-            editMode = not editMode
+        if elapsed >= actionPanelHoldTime:
+            showActionPanel = not showActionPanel
             if not editMode: saveWidgetsState()
             mouseDownStartTime = None
 
-    if editMode: 
-        screen.fill(uiData.backgroundColorEditMode)
-        drawGrid(screen, (50, 50, 50), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
-    else: 
-        screen.fill(uiData.backgroundColor)
+    if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
+    elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
+
+    if tEditModeBackgroundColor < 0: tEditModeBackgroundColor = 0
+
+    screen.fill(
+        uiTools.interpolateColors(uiData.backgroundColor,
+                                  uiData.backgroundColorEditMode,
+                                  tEditModeBackgroundColor))
+
+    if uiTools.interpolateColors((uiData.backgroundColor), (50, 50, 50, 100), tEditModeBackgroundColor) != (0, 0, 0):
+        drawGrid(screen, uiTools.interpolateColors((
+            uiData.backgroundColor),
+            (50, 50, 50),
+            tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
 
     # draw backmost layer
 
@@ -213,8 +233,9 @@ while running:
             )
     
     # draw frontmost layer
-    if editMode:
-        widgetPalette.tick(screen)
+    if editMode: widgetPalette.tick(screen)
+
+    if showActionPanel: actionPanel.tick(screen)
 
     pygame.display.flip()
     clock.tick(60)
