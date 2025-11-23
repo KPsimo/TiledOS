@@ -8,11 +8,22 @@ def makeRoundedSurface(size, radius, color):
     return pygame.transform.smoothscale(big, size)
 
 def interpolateColors(startColor, endColor, t):
-    r = int(startColor[0] + (endColor[0] - startColor[0]) * t)
-    g = int(startColor[1] + (endColor[1] - startColor[1]) * t)
-    b = int(startColor[2] + (endColor[2] - startColor[2]) * t)
+    # Clamp t to [0,1]
+    if t < 0: t = 0
+    if t > 1: t = 1
 
-    if t == 0: return startColor
-    if t == 1: return endColor
+    # Determine how many channels to produce (support RGB or RGBA inputs)
+    max_len = max(len(startColor), len(endColor))
 
-    return (r, g, b)
+    out = []
+    for i in range(max_len):
+        # default missing components: for alpha (index 3) default to 255 (opaque), else 0
+        default = 255 if i == 3 else 0
+        s = startColor[i] if i < len(startColor) else default
+        e = endColor[i] if i < len(endColor) else default
+        val = int(round(s + (e - s) * t))
+        # clamp channel to valid byte range
+        val = max(0, min(255, val))
+        out.append(val)
+
+    return tuple(out)

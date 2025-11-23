@@ -1,2 +1,3 @@
 __pycache__/
 data/widgets.json
+data/keys.py

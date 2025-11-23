@@ -151,7 +151,6 @@ class Calendar(Widget):
         text_rect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, text_rect)
 
-
 class Clock(Widget):
     def __init__(self, width=3, height=1, pos=(0, 0)):
         super().__init__(width, height, pos)
@@ -172,68 +171,11 @@ class Clock(Widget):
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
 
-# --- Assemblies (AI Generated Widgets) --- #
-
-class Date(Widget):
-    def __init__(self, width=3, height=1, pos=(0, 1)):
-        super().__init__(width, height, pos)
-        self.currentDate = time.localtime()
-        self.style = 0
-
-    def update(self):
-        self.currentDate = time.localtime()
-
-    def drawContent(self):
-        if self.style == 0: dateStr = f"{self.currentDate.tm_year:04}-{self.currentDate.tm_mon:02}-{self.currentDate.tm_mday:02}"
-        if self.style == 1: dateStr = f"{self.currentDate.tm_mon:02}/{self.currentDate.tm_mday:02}"
-        
-        text = self.fonts[int(self.height-1)].render(dateStr, True, uiData.textColor)
-        textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
-        
-        self.surface.blit(text, textRect)
-
-class TiledLabel(Widget):
-    def __init__(self, width=2, height=1, pos=(0, 2)):
-        super().__init__(width, height, pos)
-        pygame.font.init()
-        self.font = pygame.font.Font('resources/outfit.ttf', 50)
-
-    def drawContent(self):
-        text = self.font.render("Tiled", True, uiData.textColor)
-        textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
-        self.surface.blit(text, textRect)
-
-class SpinningSquare(Widget):
-    def __init__(self, width=1, height=1, pos=(0, 3), color=None, speed=0.06, size_ratio=0.6):
-        super().__init__(width, height, pos)
-        self.speed = float(speed)           # degrees per millisecond
-        self.size_ratio = float(size_ratio) # fraction of widget area used by square
-        self.angle = 0.0
-        self.square_color = color if color is not None else uiData.textColor
-
-    def drawContent(self):
-        # update angle based on global ticks so it rotates even without explicit update() calls
-        self.angle = (pygame.time.get_ticks() * self.speed) % 360
-
-        sw, sh = self.surface.get_size()
-        side = max(1, int(min(sw, sh) * self.size_ratio))
-
-        # create square surface and draw filled rounded rect
-        sq = pygame.Surface((side, side), pygame.SRCALPHA)
-        pygame.draw.rect(sq, self.square_color, sq.get_rect(), border_radius=max(1, side // 8))
-
-        # rotate and blit centered
-        rotated = pygame.transform.rotate(sq, self.angle)
-        rrect = rotated.get_rect(center=(sw // 2, sh // 2))
-        self.surface.blit(rotated, rrect)
-    
-    def clicked(self, mx, my):
-        self.speed += .05
-
 allWidgets = {
-    "Clock": Clock(),
-    "Date": Date(),
-    "Label": TiledLabel(),
-    "Spinning Square": SpinningSquare(),
-    "Calendar": Calendar()
+    "Clock": Clock()
 }
+
+def addWidget(widgetName, widget):
+    allWidgets[widgetName] = widget
+
+import assemblies

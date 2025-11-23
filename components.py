@@ -17,6 +17,9 @@ class FloatingPanel:
         self.dragging = False
         self.dragOffset = (0, 0)
 
+        # optional overall alpha for the panel (None = unchanged)
+        self.global_alpha = None
+
         self._updateSurface()
 
     def _updateSurface(self):
@@ -49,7 +52,13 @@ class FloatingPanel:
 
         self.surface.blit(roundedBg, (0, 0))
         self.drawContent()
-        screen.blit(self.surface, self.pos)
+        # If a global alpha is set, blit a temporary copy with that alpha
+        if self.global_alpha is not None:
+            tmp = self.surface.copy()
+            tmp.set_alpha(int(self.global_alpha))
+            screen.blit(tmp, self.pos)
+        else:
+            screen.blit(self.surface, self.pos)
 
     def drawContent(self):
         # To be overridden by child classes
@@ -163,7 +172,19 @@ class actionPanel(CenteredPanel):
             px, py = self.pos
             sx, sy = self.getSize()
             if px <= mx <= px + sx and py <= my <= py + sy:
-                self.clicked(mx, my)
+                return self.clicked(mx, my)
 
     def clicked(self, mx, my):
-        pass
+        px, py = self.getPosition()
+        relativeX = mx - px
+
+        index = relativeX // self.iconSize
+
+        if index == 0:
+            return "quit"
+        elif index == 1:
+            return "toggleEdit"
+        elif index == 2:
+            return "toggleActionPanel"
+
+        return None

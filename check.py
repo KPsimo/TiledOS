@@ -15,7 +15,7 @@ if CREDENTIALS_PATH.exists():
     print("   Full path:", CREDENTIALS_PATH.resolve())
 else:
     print("credentials.json not found.")
-    print("   Make sure it’s inside a folder named 'data' next to your TasksSync.py file.")
+    print("   Make sure it's inside a folder named 'data' next to your TasksSync.py file.")
     print("   Example expected structure:")
     print("   project_folder/")
     print("   ├── TasksSync.py")

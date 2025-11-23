@@ -69,7 +69,7 @@ loadWidgetsState()
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight))
-pygame.display.set_caption("TileOS")
+pygame.display.set_caption("TiledOS")
 
 clock = pygame.time.Clock()
 
@@ -109,6 +109,20 @@ while running:
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 showActionPanel = not showActionPanel
+
+            if showActionPanel:
+                actionPanelOut = actionPanel.handleEvent(event)
+                if actionPanelOut == "quit":
+                    running = False
+                
+                elif actionPanelOut == "toggleEdit":
+                    editMode = not editMode
+                    if not editMode:
+                        saveWidgetsState()
+                    showActionPanel = not showActionPanel
+
+                elif actionPanelOut == "toggleActionPanel":
+                    showActionPanel = not showActionPanel
 
             # not edit mode events
             if not editMode:
@@ -214,9 +228,10 @@ while running:
                                   uiData.backgroundColorEditMode,
                                   tEditModeBackgroundColor))
 
-    if uiTools.interpolateColors((uiData.backgroundColor), (50, 50, 50, 100), tEditModeBackgroundColor) != (0, 0, 0):
-        drawGrid(screen, uiTools.interpolateColors((
-            uiData.backgroundColor),
+    col_check = uiTools.interpolateColors(uiData.backgroundColor, (50, 50, 50, 100), tEditModeBackgroundColor)
+    if col_check[:3] != (0, 0, 0):
+        drawGrid(screen, uiTools.interpolateColors(
+            uiData.backgroundColor,
             (50, 50, 50),
             tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
 
@@ -243,22 +258,26 @@ while running:
             )
     
     # draw frontmost layer
+
+    # widget palette
     if editMode: widgetPalette.tick(screen)
 
+    # action panel
     if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
     elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2
 
     if tActionPanelOpacity < 0: tActionPanelOpacity = 0
-
-    if showActionPanel:
+    
+    if tActionPanelOpacity > 0:
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
         overlay.fill(uiTools.interpolateColors((0, 0, 0, 0),
-                                               (0, 0, 0, 128),
-                                               tActionPanelOpacity))  # RGBA: alpha 128 ~= 50%
-        
-        screen.blit(overlay, (0, 0))
+                                               (0, 0, 0, 200),
+                                               tActionPanelOpacity))
 
-        actionPanel.tick(screen)
+        screen.blit(overlay, (0, 0))
+    
+    if showActionPanel: actionPanel.tick(screen)
+        
 
     pygame.display.flip()
     clock.tick(60)
