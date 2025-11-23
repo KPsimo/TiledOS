@@ -136,14 +136,26 @@ class widgetPallettePanel(FloatingPanel):
     
 class actionPanel(CenteredPanel):
     def __init__(self):
-        super().__init__(400, 200)
+        self.iconSize = 230
+        self.icons = {
+            "power" : pygame.image.load("resources/icons/power.png").convert_alpha(),
+            "edit" : pygame.image.load("resources/icons/edit.png").convert_alpha(),
+            "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
+        }
+
+        super().__init__(self.iconSize * len(self.icons), 200)
 
     def drawContent(self):
-        actionText = "Action Panel"
-        font = pygame.font.Font('resources/outfit.ttf', 50)
-        textSurface = font.render(actionText, True, uiData.textColor)
-        textRect = textSurface.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
-        self.surface.blit(textSurface, textRect)
+        xOffset = 0
+
+        for icon in self.icons.values():
+            icon = pygame.transform.smoothscale(icon, (self.iconSize, self.iconSize))
+            self.surface.blit(icon, (xOffset, self.height // 2 - (self.iconSize / 2)))
+            xOffset += self.iconSize
+
+    def tick(self, screen):
+        self.width = self.iconSize * len(self.icons)
+        self.draw(screen)
 
     def handleEvent(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

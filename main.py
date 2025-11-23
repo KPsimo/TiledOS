@@ -66,15 +66,15 @@ screenWidgets = {}
 
 loadWidgetsState()
 
-actionPanel = components.actionPanel()
-widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
-
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight))
 pygame.display.set_caption("TileOS")
 
 clock = pygame.time.Clock()
+
+actionPanel = components.actionPanel()
+widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
 running = True
 
@@ -91,6 +91,8 @@ mouseDownStartTime = None
 
 tEditModeBackgroundColor = 0
 
+tActionPanelOpacity = 0
+
 while running:
     for event in pygame.event.get():
         # check quit
@@ -99,6 +101,21 @@ while running:
 
         # check normal events 
         if True:
+            # always active events
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                editMode = not editMode
+                if not editMode:
+                    saveWidgetsState()
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                showActionPanel = not showActionPanel
+
+            # not edit mode events
+            if not editMode:
+                for widget in screenWidgets.values():
+                    widget.handleEvent(event)
+
+            # edit mode events
             if editMode:
                 widgetPaletteOut = widgetPalette.handleEvent(event)
                 if widgetPaletteOut is not None:
@@ -108,14 +125,7 @@ while running:
                     else:
                         addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
-                editMode = not editMode
-                if not editMode:
-                    saveWidgetsState()
 
-            if not editMode:
-                for widget in screenWidgets.values():
-                    widget.handleEvent(event)
 
         # check edit mode events
         if True:
@@ -186,7 +196,7 @@ while running:
                 mouseDownStartTime = None
     # event check end
 
-    # edit mode hold check
+    # action panel hold check
     if mouseDownStartTime is not None:
         elapsed = time.time() - mouseDownStartTime
         if elapsed >= actionPanelHoldTime:
@@ -235,7 +245,20 @@ while running:
     # draw frontmost layer
     if editMode: widgetPalette.tick(screen)
 
-    if showActionPanel: actionPanel.tick(screen)
+    if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
+    elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2
+
+    if tActionPanelOpacity < 0: tActionPanelOpacity = 0
+
+    if showActionPanel:
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill(uiTools.interpolateColors((0, 0, 0, 0),
+                                               (0, 0, 0, 128),
+                                               tActionPanelOpacity))  # RGBA: alpha 128 ~= 50%
+        
+        screen.blit(overlay, (0, 0))
+
+        actionPanel.tick(screen)
 
     pygame.display.flip()
     clock.tick(60)
