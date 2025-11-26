@@ -240,7 +240,7 @@ import data.uiData as uiData
 
 WIDGET_CLASS = {assemblyName.replace(" ", "")}
 ''')
-        
+
 def modifyAssembly(modificationRequest, assemblyName):
     with open(f"assemblies/{assemblyName.replace(' ', '')}.py", "r") as f:
         assemblyCode = f.read()
@@ -258,5 +258,7 @@ import data.uiData as uiData
 
 WIDGET_CLASS = {assemblyName.replace(" ", "")}
 ''')
-
-modifyAssembly("Make the ball smaller", "Bouncing Ball")
+        
+name = input("Enter the name of the widget you want to create: ")
+description = input("Enter a brief description of the widget's functionality: ")
+buildAssembly(description, name)

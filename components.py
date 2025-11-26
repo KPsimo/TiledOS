@@ -37,6 +37,8 @@ class FloatingPanel:
     def setSize(self, width, height):
         self.width = width
         self.height = height
+        # ensure the surface matches the new size
+        self._updateSurface()
 
     def setPosition(self, x, y):
         self.pos = (x, y)
@@ -106,6 +108,15 @@ class CenteredPanel(FloatingPanel):
 
     def handleEvent(self, event):
         return None
+    
+    def setSize(self, width, height):
+        super().setSize(width, height)
+        screenWidth, screenHeight = uiData.screenWidth, uiData.screenHeight
+        self.setPosition((screenWidth - width) // 2, (screenHeight - height) // 2)
+
+class SnappingPanel(widgets.Widget):
+    def __init__(self, width, height, pos):
+        super().__init__(width, height, pos)
 
 # --- Panels --- #
 
@@ -125,7 +136,6 @@ class widgetPallettePanel(FloatingPanel):
         self.surface.blit(titleSurface, (10, 10))
 
         for widget in widgets.allWidgets:
-            # all widgets is a dictionary with widget names as keys and widget classes as values
             widgetName = widget
             textSurface = self.fontSmall.render(widgetName, True, uiData.textColor)
             self.surface.blit(textSurface, (10, 75 + list(widgets.allWidgets.keys()).index(widgetName) * 60))
@@ -152,19 +162,41 @@ class actionPanel(CenteredPanel):
             "assemble" : pygame.image.load("resources/icons/assemble.png").convert_alpha(),
             "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
         }
+        self.page = "main"
 
         super().__init__(self.iconSize * len(self.icons), 200)
+
+    def setPage(self, pageName):
+        self.page = pageName
+
+        if self.page == "main":
+            self.icons = {
+                "power" : pygame.image.load("resources/icons/power.png").convert_alpha(),
+                "edit" : pygame.image.load("resources/icons/edit.png").convert_alpha(),
+                "assemble" : pygame.image.load("resources/icons/assemble.png").convert_alpha(),
+                "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
+            }
+        elif self.page == "builder":
+            self.icons = {
+                "power" : pygame.image.load("resources/icons/power.png").convert_alpha(),
+                "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
+            }
+            newWidth = self.iconSize * len(self.icons)
+            self.setSize(newWidth, self.height)
 
     def drawContent(self):
         xOffset = 0
 
         for icon in self.icons.values():
             icon = pygame.transform.smoothscale(icon, (self.iconSize, self.iconSize))
-            self.surface.blit(icon, (xOffset, self.height // 2 - (self.iconSize / 2)))
+            y = (self.height // 2) - (self.iconSize // 2)
+            self.surface.blit(icon, (xOffset, y))
             xOffset += self.iconSize
 
     def tick(self, screen):
-        self.width = self.iconSize * len(self.icons)
+        newWidth = self.iconSize * len(self.icons)
+        if newWidth != self.width:
+            self.setSize(newWidth, self.height)
         self.draw(screen)
 
     def handleEvent(self, event):
@@ -186,6 +218,17 @@ class actionPanel(CenteredPanel):
         elif index == 1:
             return "toggleEdit"
         elif index == 2:
+            return "openBuilder"
+        elif index == 3:
             return "toggleActionPanel"
 
         return None
+    
+class widgetBuilderPanel(SnappingPanel):
+    def __init__(self):
+        super().__init__(width=8, height=9, pos=(8, 0))
+
+    def drawContent(self):
+        titleFont = pygame.font.Font('resources/outfit.ttf', 40)
+        titleSurface = titleFont.render("Builder", True, uiData.textColor)
+        self.surface.blit(titleSurface, (10, 10))
