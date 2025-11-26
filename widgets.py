@@ -4,10 +4,14 @@ import time
 import data.uiData as uiData
 import uiTools
 import math
+import importlib
+import os
+import sys
 
 # --- Widget Template --- #
 
 class Widget:
+    name = "Widget"
     def __init__(self, width=1, height=1, pos=(0, 0)):
         # logical target sizes (integers commonly), current animated size stored in self.size
         self.width = width
@@ -171,11 +175,36 @@ class Clock(Widget):
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
 
+# --- Import Widgets & Assemblies --- #
+
 allWidgets = {
-    "Clock": Clock()
+    "Clock": Clock(),
+    "Calendar": Calendar()
 }
 
 def addWidget(widgetName, widget):
     allWidgets[widgetName] = widget
 
-import assemblies
+def loadWidgets():
+    widgetsDir = "assemblies"
+    sys.path.insert(0, widgetsDir)
+
+    loaded = []
+    for file in os.listdir(widgetsDir):
+        if not file.endswith(".py"):
+            continue
+
+        moduleName = file[:-3]
+
+        try:
+            mod = importlib.import_module(moduleName)
+            cls = getattr(mod, "WIDGET_CLASS")
+            loaded.append(cls())
+        except Exception as e:
+            print("failed to load", file, e)
+
+    return loaded
+
+loadedWidgets = loadWidgets()
+for widget in loadedWidgets:
+    addWidget(widget.name, widget)

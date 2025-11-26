@@ -149,6 +149,7 @@ class actionPanel(CenteredPanel):
         self.icons = {
             "power" : pygame.image.load("resources/icons/power.png").convert_alpha(),
             "edit" : pygame.image.load("resources/icons/edit.png").convert_alpha(),
+            "assemble" : pygame.image.load("resources/icons/assemble.png").convert_alpha(),
             "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
         }
 
