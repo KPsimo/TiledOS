@@ -1,44 +1,40 @@
 import tkinter as tk
 from tkinter import ttk
 
-class MinimalEditor(tk.Toplevel):
-    def __init__(self, master=None, width=400, height=120, fontPath="resources/outfit.ttf"):
-        super().__init__(master)
-        
-        self.title("minimal editor")
-        self.geometry(f"{width}x{height}")
-        self.configure(bg="#1b1b1b")
+def getText():
+    result = {"text": ""}  # container to hold the value
 
-        # register font
-        try:
-            self.tk.call("font", "create", "Outfit", "-family", fontPath)
-        except tk.TclError:
-            pass  # fallback if font fails
+    root = tk.Tk()
+    root.geometry("500x500")
+    root.configure(bg="#1b1b1b")
 
-        # style
-        style = ttk.Style(self)
-        style.theme_use("clam")
-        style.configure("TFrame", background="#000000")
-        style.configure(
-            "TEntry",
-            fieldbackground="#000000",
-            foreground="#ffffff",
-            insertcolor="#ffffff",
-            borderwidth=0,
-            padding=10
-        )
+    root.tk.call("font", "create", "Outfit", "-family", "resources/outfit.ttf")
 
-        # frame
-        frame = ttk.Frame(self)
-        frame.pack(fill="both", expand=True, padx=0, pady=0)
+    style = ttk.Style(root)
+    style.theme_use("clam")
+    style.configure("TFrame", background="#000000")
+    style.configure(
+        "TEntry",
+        fieldbackground="#000000",
+        foreground="#ffffff",
+        insertcolor="#ffffff",
+        borderwidth=0,
+        padding=10
+    )
 
-        # entry (main element)
-        self.entry = ttk.Entry(frame, font=("Outfit", 14), justify="center")
-        self.entry.pack(fill="both", expand=True)
+    frame = ttk.Frame(root)
+    frame.pack(fill="both", expand=True)
 
-    def getText(self):
-        return self.entry.get()
+    entry = ttk.Entry(frame, font=("Outfit", 14), justify="center")
+    entry.pack(fill="both", expand=True)
 
-    def setText(self, text):
-        self.entry.delete(0, "end")
-        self.entry.insert(0, text)
+    def onEnter(event):
+        result["text"] = entry.get()
+        root.destroy()  # this ends wait_window()
+
+    root.bind("<Return>", onEnter)
+    entry.focus()
+
+    root.wait_window()  # waits until destroy() happens
+
+    return result["text"]
