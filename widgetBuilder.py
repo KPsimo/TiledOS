@@ -24,11 +24,23 @@ Output expectations:
 - Ensure the class inherits from the provided Widget class.
 - Use only standard Python libraries and Pygame.
 - Absolutely do not include any special formatting or LaTeX, just raw, plaintext Python code.
+- DO NOT OVERRIDE THESE METHODS
+    - draw(self, screen)
+    - setSize(self, width, height)
+    - setPosition(self, x, y)
+    - getSize(self)
+    - getPos(self)
+    - getActualSize(self)
+    - getActualPosition(self)
+    - _updateSurface(self)
+    - setColor(self, color)
 
 The parent widget class is as follows:
 
 class Widget:
     name = "Widget"
+    preferredSizes = [(1, 1)]
+    freeSize = True
     def __init__(self, width=1, height=1, pos=(0, 0)):
         # logical target sizes (integers commonly), current animated size stored in self.size
         self.width = width
@@ -82,9 +94,18 @@ class Widget:
         return (int(self.pos[0]), int(self.pos[1]))
 
     def setSize(self, width, height):
-        self.targetSize = (float(width), float(height))
-        self.width = width
-        self.height = height
+        best = min(
+        self.preferredSizes,
+        key=lambda s: abs(s[0] - width) + abs(s[1] - height)
+        )
+
+        # snap to that size
+        bw, bh = best
+        self.width = bw
+        self.height = bh
+        self.targetSize = (float(bw), float(bh))
+
+        # animate toward it
         self.sizeSnapped = False
 
     def setPosition(self, x, y):
@@ -159,6 +180,7 @@ class Widget:
         # To be overridden by child classes
         pass
 
+
 Using the above Widget class as a base, generate a new Python class that defines a widget called "Date".
 
 class Date(Widget):
@@ -205,6 +227,8 @@ textColor = (255, 255, 255)
 backgroundColorEditMode = (20, 20, 22)
 
 cornerRadius = 15
+
+An example call to cellSize wpuld be uiData.cellSize
 '''
 
 messages = [
@@ -226,7 +250,7 @@ def getWidgetCode(prompt):
     return reply
 
 def buildAssembly(requestedWidget, assemblyName):
-    prompt = f"Create a Python class that defines a widget with the requested description '{requestedWidget}' for TiledOS. The class should be named '{assemblyName.replace(" ", "")}', with the static name {assemblyName} and inherit from the Widget class provided. Ensure the widget has useful functionality and a visually appealing design."
+    prompt = f"Create a Python class that defines a widget with the requested description '{requestedWidget}' for TiledOS. The class should be named '{assemblyName.replace(" ", "")}', with the static name {assemblyName} and inherit from the Widget class provided. Ensure that preferred sizes are set. Ensure the widget has useful functionality and a visually appealing design. Import modules as needed."
 
     assemblyCode = getWidgetCode(prompt)
     
@@ -261,4 +285,5 @@ WIDGET_CLASS = {assemblyName.replace(" ", "")}
         
 name = input("Enter the name of the widget you want to create: ")
 description = input("Enter a brief description of the widget's functionality: ")
+print("Building assembly...")
 buildAssembly(description, name)

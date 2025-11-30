@@ -3,6 +3,7 @@ import data.uiData as uiData
 
 class SpinningSquare(Widget):
     name = "Spinning Square"
+    preferredSizes = [(1, 1), (2, 2), (3, 3), (4, 4)]
     def __init__(self, width=1, height=1, pos=(0, 3), color=None, speed=0.06, size_ratio=0.6):
         super().__init__(width, height, pos)
         self.speed = float(speed)           # degrees per millisecond

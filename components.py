@@ -226,7 +226,7 @@ class actionPanel(CenteredPanel):
     
 class widgetBuilderPanel(SnappingPanel):
     def __init__(self):
-        super().__init__(width=8, height=9, pos=(8, 0))
+        super().__init__(width=16, height=4, pos=(0, 5))
 
     def drawContent(self):
         titleFont = pygame.font.Font('resources/outfit.ttf', 40)

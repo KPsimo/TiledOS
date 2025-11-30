@@ -12,6 +12,8 @@ import sys
 
 class Widget:
     name = "Widget"
+    preferredSizes = [(1, 1)]
+    freeSize = True
     def __init__(self, width=1, height=1, pos=(0, 0)):
         # logical target sizes (integers commonly), current animated size stored in self.size
         self.width = width
@@ -65,9 +67,24 @@ class Widget:
         return (int(self.pos[0]), int(self.pos[1]))
 
     def setSize(self, width, height):
-        self.targetSize = (float(width), float(height))
-        self.width = width
-        self.height = height
+        if not Widget.freeSize:
+            best = min(
+            self.preferredSizes,
+            key=lambda s: abs(s[0] - width) + abs(s[1] - height)
+            )
+
+            # snap to that size
+            bw, bh = best
+            self.width = bw
+            self.height = bh
+            self.targetSize = (float(bw), float(bh))
+
+        else:
+            self.width = width
+            self.height = height
+            self.targetSize = (float(width), float(height))
+
+        # animate toward it
         self.sizeSnapped = False
 
     def setPosition(self, x, y):
@@ -78,17 +95,30 @@ class Widget:
         self.color = color
 
     def draw(self, screen):
-        self.surface.fill((0, 0, 0, 0))
-        roundedBg = uiTools.makeRoundedSurface(
-            self.surface.get_size(),
-            uiData.cornerRadius,
-            self.color
-        )
-        self.surface.blit(roundedBg, (0, 0))
-        self.drawContent()
-        x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
-        y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
-        screen.blit(self.surface, (int(x), int(y)))
+        if self.color == uiData.widgetBackgroundColorProgression:
+            self.surface.fill((0, 0, 0, 0))
+            roundedBg = uiTools.makeRoundedSurface(
+                self.surface.get_size(),
+                uiData.cornerRadius,
+                self.color
+            )
+            self.surface.blit(roundedBg, (0, 0))
+            self.drawContent()
+            x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            screen.blit(self.surface, (int(x), int(y) - 2))
+        else:
+            self.surface.fill((0, 0, 0, 0))
+            roundedBg = uiTools.makeRoundedSurface(
+                self.surface.get_size(),
+                uiData.cornerRadius,
+                self.color
+            )
+            self.surface.blit(roundedBg, (0, 0))
+            self.drawContent()
+            x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            screen.blit(self.surface, (int(x), int(y)))
 
     def drawContent(self):
         # To be overridden by child classes
@@ -145,6 +175,7 @@ class Widget:
 # --- Widgets --- #
 
 class Calendar(Widget):
+    preferredSizes = [(3, 1), (6, 2)]
     def __init__(self, width=1, height=1, pos=(0, 0)):
         super().__init__(width, height, pos)
         pygame.font.init()
@@ -156,6 +187,7 @@ class Calendar(Widget):
         self.surface.blit(text, text_rect)
 
 class Clock(Widget):
+    preferredSizes = [(3, 1), (6, 2)]
     def __init__(self, width=3, height=1, pos=(0, 0)):
         super().__init__(width, height, pos)
         self.currentTime = time.localtime()

@@ -3,6 +3,7 @@ import data.uiData as uiData
 
 class TiledLabel(Widget):
     name = "Tiled Label"
+    preferredSizes = [(3, 1), (6, 2)]
     def __init__(self, width=2, height=1, pos=(0, 2)):
         super().__init__(width, height, pos)
         pygame.font.init()
