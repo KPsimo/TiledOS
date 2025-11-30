@@ -6,6 +6,7 @@ import uiTools
 import widgets
 import components
 import time
+import windowTools
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -77,7 +78,11 @@ clock = pygame.time.Clock()
 
 actionPanel = components.actionPanel()
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
+
+builderTitleBar = components.snappingTitleBar("Create Assembly")
 builderPanel = components.widgetBuilderPanel()
+
+builderNameInput = components.textFieldPanel(400, 60, (500, 500))
 
 running = True
 
@@ -110,6 +115,10 @@ while running:
                     editMode = not editMode
                     if not editMode:
                         saveWidgetsState()
+
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
+                    currentPage = "builder"
+                    actionPanel.setPage("builder")
 
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     showActionPanel = not showActionPanel
@@ -276,6 +285,8 @@ while running:
             if event.type == pygame.QUIT:
                 running = False   
         
+            builderNameInput.handleEvent(event)
+
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 showActionPanel = not showActionPanel
             
@@ -290,7 +301,10 @@ while running:
         screen.fill(uiData.backgroundColor)
 
         builderPanel.tick(screen)
+        builderTitleBar.tick(screen)
         
+        builderNameInput.tick(screen)
+
     # Always active
     if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
     elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2

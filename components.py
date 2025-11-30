@@ -3,6 +3,7 @@ import math
 import data.uiData as uiData
 import uiTools
 import widgets
+import windowTools
 
 # --- Panel Types --- #
 
@@ -213,22 +214,89 @@ class actionPanel(CenteredPanel):
 
         index = relativeX // self.iconSize
 
-        if index == 0:
-            return "quit"
-        elif index == 1:
-            return "toggleEdit"
-        elif index == 2:
-            return "openBuilder"
-        elif index == 3:
-            return "toggleActionPanel"
+        if self.page == "main":
+            if index == 0:
+                return "quit"
+            elif index == 1:
+                return "toggleEdit"
+            elif index == 2:
+                return "openBuilder"
+            elif index == 3:
+                return "toggleActionPanel"
 
-        return None
+            return None
+        
+        elif self.page == "builder":
+            if index == 0:
+                return "quit"
+            elif index == 1:
+                return "toggleActionPanel"
+
+            return None
     
+class snappingTitleBar(SnappingPanel):
+    def __init__(self, title):
+        super().__init__(width=16, height=1, pos=(0, 0))
+        self.color = (0, 0, 0, 0)
+        self.title = title
+
+    def drawContent(self):
+        titleFont = pygame.font.Font('resources/outfit.ttf', 40)
+        titleSurface = titleFont.render(self.title, True, uiData.textColor)
+        sw, sh = self.surface.get_size()
+        tw, th = titleSurface.get_size()
+        self.surface.blit(titleSurface, ((sw - tw) // 2, (sh - th) // 2))
+
 class widgetBuilderPanel(SnappingPanel):
     def __init__(self):
         super().__init__(width=16, height=4, pos=(0, 5))
+        self.color = (0, 0, 0, 0)
 
     def drawContent(self):
         titleFont = pygame.font.Font('resources/outfit.ttf', 40)
         titleSurface = titleFont.render("Builder", True, uiData.textColor)
         self.surface.blit(titleSurface, (10, 10))
+
+class textFieldPanel(SnappingPanel):
+    def __init__(self, width, height, pos):
+        self.width = width
+        self.height = height
+        self.pos = pos
+        self.text = ""
+    
+        self.color = uiData.widgetBackgroundColor
+
+        pygame.font.init()
+        self.font = pygame.font.Font('resources/outfit.ttf', 30)
+
+        self.surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+
+    def draw(self, screen):
+        self.surface.fill((0, 0, 0, 0))
+        roundedBg = uiTools.makeRoundedSurface(
+            self.surface.get_size(),
+            uiData.cornerRadius,
+            self.color
+        )
+
+        self.surface.blit(roundedBg, (0, 0))
+
+        textSurface = self.font.render(self.text, True, uiData.textColor)
+        self.surface.blit(textSurface, (10, 10))
+
+        screen.blit(self.surface, self.pos)
+
+    def tick(self, screen):
+        self.draw(screen)
+
+    def handleEvent(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            px, py = self.pos
+            sx, sy = self.getSize()
+            if px <= mx <= px + sx and py <= my <= py + sy:
+                return self.clicked(mx, my)
+
+    def clicked(self, mx, my):
+        self.text = windowTools.getText()
+        return self.text
