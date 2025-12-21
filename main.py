@@ -7,6 +7,7 @@ import widgets
 import components
 import time
 import windowTools
+import widgetBuilder
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -82,8 +83,10 @@ widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 builderTitleBar = components.snappingTitleBar("Create Assembly")
 builderPanel = components.widgetBuilderPanel()
 
-builderNameInput = components.textFieldPanel(800, 110, (-1, 550), fontSize=60, hint="Widget Name")
-builderDescriptionInput = components.textFieldPanel(1100, 340, (-1, 700), fontSize=50, hint="Widget Description")
+builderNameInput = components.textFieldPanel(1100, 110, (-1, 550), fontSize=60, hint="Widget Name")
+builderDescriptionInput = components.textFieldPanel(1100, 250, (-1, 680), fontSize=40, hint="Widget Description")
+
+builderAssembleButton = components.button("Assemble", 1100, 90, (-1, 950), fontSize=60)
 
 running = True
 
@@ -290,7 +293,13 @@ while running:
                         showActionPanel = not showActionPanel
             else:
                 builderNameInput.handleEvent(event)
-                builderDescriptionInput.handleEvent(event) # todo multiline text rendering
+                builderDescriptionInput.handleEvent(event)
+                if builderAssembleButton.handleEvent(event) == "clicked":
+                    widgetName = builderNameInput.getText()
+                    widgetDescription = builderDescriptionInput.getText()
+                    if widgetName != "" and widgetDescription != "":
+                        widgetBuilder.buildAssembly(widgetDescription, widgetName)
+                        print("Built assembly:", widgetName)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouseDownStartTime = time.time()
@@ -306,6 +315,12 @@ while running:
         
         builderNameInput.tick(screen)
         builderDescriptionInput.tick(screen)
+        builderAssembleButton.tick(screen)
+        
+        displayWidget = screenWidgets["Clock"]
+
+        displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
+        displayWidget.tick(screen)
 
     # Always active
     if mouseDownStartTime is not None:

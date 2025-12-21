@@ -19,6 +19,7 @@ class Widget:
         self.width = width
         self.height = height
         self.pos = (float(pos[0]), float(pos[1]))
+        self.posOverridden = False
 
         # size easing state
         self.size = (float(width), float(height))
@@ -55,10 +56,13 @@ class Widget:
         return self.surface.get_size()
     
     def getActualPosition(self):
-        return (
-            self.pos[0] * (uiData.cellSize + uiData.cellPadding) + uiData.cellPadding // 2,
-            self.pos[1] * (uiData.cellSize + uiData.cellPadding) + uiData.cellPadding // 2
-        )
+        if self.posOverridden:
+            return self.pos
+        else:
+            return (
+                self.pos[0] * (uiData.cellSize + uiData.cellPadding) + uiData.cellPadding // 2,
+                self.pos[1] * (uiData.cellSize + uiData.cellPadding) + uiData.cellPadding // 2
+            )
 
     def getSize(self):
         return (self.width, self.height)
@@ -90,6 +94,13 @@ class Widget:
     def setPosition(self, x, y):
         self.targetPos = (float(x), float(y))
         self.posSnapped = False
+        self.posOverridden = False
+
+    def overrideActualPosition(self, x, y):
+        self.pos = (x, y)
+        self.targetPos = (x, y)
+        self.posSnapped = True
+        self.posOverridden = True
 
     def setColor(self, color):
         self.color = color
@@ -104,8 +115,11 @@ class Widget:
             )
             self.surface.blit(roundedBg, (0, 0))
             self.drawContent()
-            x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
-            y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            if self.posOverridden:
+                x, y = self.pos
+            else:
+                x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+                y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
             screen.blit(self.surface, (int(x), int(y) - 2))
         else:
             self.surface.fill((0, 0, 0, 0))
@@ -116,8 +130,11 @@ class Widget:
             )
             self.surface.blit(roundedBg, (0, 0))
             self.drawContent()
-            x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
-            y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            if self.posOverridden:
+                x, y = self.pos
+            else:
+                x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+                y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
             screen.blit(self.surface, (int(x), int(y)))
 
     def drawContent(self):
@@ -130,17 +147,18 @@ class Widget:
 
     def tick(self, screen):
         # position easing
-        if not self.posSnapped:
-            px, py = self.pos
-            tx, ty = self.targetPos
-            nx = px + (tx - px) * self.easeSpeed
-            ny = py + (ty - py) * self.easeSpeed
+        if not self.posOverridden:
+            if not self.posSnapped:
+                px, py = self.pos
+                tx, ty = self.targetPos
+                nx = px + (tx - px) * self.easeSpeed
+                ny = py + (ty - py) * self.easeSpeed
 
-            if math.hypot(tx - nx, ty - ny) < self.snapThreshold:
-                nx, ny = tx, ty
-                self.posSnapped = True
+                if math.hypot(tx - nx, ty - ny) < self.snapThreshold:
+                    nx, ny = tx, ty
+                    self.posSnapped = True
 
-            self.pos = (nx, ny)
+                self.pos = (nx, ny)
 
         # size easing
         if not self.sizeSnapped:

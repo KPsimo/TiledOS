@@ -329,3 +329,84 @@ class textFieldPanel(SnappingPanel):
         self.text = windowTools.getText()
         self.displayHint = False
         return self.text
+
+    def getText(self):
+        return self.text
+
+class button(SnappingPanel):
+    def __init__(self, text, width, height, pos, fontSize):
+        self.width = width
+        self.height = height
+
+        if not pos[0] == -1: self.pos = pos
+        else: self.pos = ((uiData.screenWidth - width) // 2, pos[1])
+        
+        if text is not None: self.text = text
+        else: self.text = ""
+
+        self.lines = uiTools.wrapText(self.text, 50)
+
+        self.fontSize = fontSize
+    
+        self.color = uiData.widgetBackgroundColor
+
+        pygame.font.init()
+        self.font = pygame.font.Font('resources/outfit.ttf', self.fontSize)
+
+        self.surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+
+    def draw(self, screen):
+        self.surface.fill((0, 0, 0, 0))
+        roundedBg = uiTools.makeRoundedSurface(
+            self.surface.get_size(),
+            uiData.cornerRadius,
+            self.color
+        )
+
+        self.surface.blit(roundedBg, (0, 0))
+
+        lines = uiTools.wrapText(self.text, 50)
+
+        if lines:
+            lineSize = self.font.get_linesize()
+            lineBezel = max(2, int(lineSize * 0.2))
+            x, y = 10, 10
+            color = uiData.textColor
+
+            totalHeight = len(lines) * (lineSize + lineBezel) - lineBezel
+            yOffset = (self.height - totalHeight) // 2
+
+            for line in lines:
+                rendered = self.font.render(line, True, color)
+                lineWidth = rendered.get_width()
+                x = (self.width - lineWidth) // 2
+                self.surface.blit(rendered, (x, yOffset))
+                yOffset += lineSize + lineBezel
+                
+            sw, sh = self.surface.get_size()
+            x = (self.width - sw) // 2
+            y = (self.height - sh) // 2
+            screen.blit(self.surface, (self.pos[0] + x, self.pos[1] + y))
+
+    def tick(self, screen):
+        self.draw(screen)
+
+    def handleEvent(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            px, py = self.pos
+            sx, sy = self.getSize()
+            if px <= mx <= px + sx and py <= my <= py + sy:
+                return self.clicked(mx, my)
+
+        elif event.type == pygame.MOUSEMOTION:
+            mx, my = event.pos
+            px, py = self.pos
+            sx, sy = self.getSize()
+            if px <= mx <= px + sx and py <= my <= py + sy:
+                self.color = uiData.widgetBackgroundColorProgression
+            else:
+                self.color = uiData.widgetBackgroundColor
+
+    def clicked(self, mx, my):
+        return "clicked"
