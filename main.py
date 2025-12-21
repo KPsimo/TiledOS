@@ -82,7 +82,8 @@ widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 builderTitleBar = components.snappingTitleBar("Create Assembly")
 builderPanel = components.widgetBuilderPanel()
 
-builderNameInput = components.textFieldPanel(400, 60, (500, 500))
+builderNameInput = components.textFieldPanel(800, 110, (-1, 550), fontSize=60, hint="Widget Name")
+builderDescriptionInput = components.textFieldPanel(1100, 340, (-1, 700), fontSize=50, hint="Widget Description")
 
 running = True
 
@@ -289,6 +290,7 @@ while running:
                         showActionPanel = not showActionPanel
             else:
                 builderNameInput.handleEvent(event)
+                builderDescriptionInput.handleEvent(event) # todo multiline text rendering
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouseDownStartTime = time.time()
@@ -299,10 +301,11 @@ while running:
 
         screen.fill(uiData.backgroundColor)
 
-        builderPanel.tick(screen)
+        # builderPanel.tick(screen)
         builderTitleBar.tick(screen)
         
         builderNameInput.tick(screen)
+        builderDescriptionInput.tick(screen)
 
     # Always active
     if mouseDownStartTime is not None:

@@ -27,3 +27,25 @@ def interpolateColors(startColor, endColor, t):
         out.append(val)
 
     return tuple(out)
+
+def wrapText(text, maxCharacters):
+    lines = text.splitlines()
+    result = []
+
+    for originalLine in lines:
+        words = originalLine.split()
+        line = ""
+        
+        for word in words:
+            if len(line) + len(word) + (1 if line else 0) > maxCharacters:
+                result.append(line)
+                line = word
+            else:
+                line += (" " if line else "") + word
+
+        if line:
+            result.append(line)
+        elif not words:
+            result.append("")
+
+    return result

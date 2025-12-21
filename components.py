@@ -258,18 +258,28 @@ class widgetBuilderPanel(SnappingPanel):
         self.surface.blit(titleSurface, (10, 10))
 
 class textFieldPanel(SnappingPanel):
-    def __init__(self, width, height, pos):
+    def __init__(self, width, height, pos, fontSize, hint):
         self.width = width
         self.height = height
-        self.pos = pos
-        self.text = ""
+
+        if not pos[0] == -1: self.pos = pos
+        else: self.pos = ((uiData.screenWidth - width) // 2, pos[1])
+        
+        if hint is not None: self.text = hint
+        else: self.text = ""
+
+        self.lines = uiTools.wrapText(self.text, 50)
+
+        self.fontSize = fontSize
     
         self.color = uiData.widgetBackgroundColor
 
         pygame.font.init()
-        self.font = pygame.font.Font('resources/outfit.ttf', 30)
+        self.font = pygame.font.Font('resources/outfit.ttf', self.fontSize)
 
         self.surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+
+        self.displayHint = True
 
     def draw(self, screen):
         self.surface.fill((0, 0, 0, 0))
@@ -281,10 +291,28 @@ class textFieldPanel(SnappingPanel):
 
         self.surface.blit(roundedBg, (0, 0))
 
-        textSurface = self.font.render(self.text, True, uiData.textColor)
-        self.surface.blit(textSurface, (10, 10))
+        lines = uiTools.wrapText(self.text, 50)
 
-        screen.blit(self.surface, self.pos)
+        if lines:
+            lineSize = self.font.get_linesize()
+            lineBezel = max(2, int(lineSize * 0.2))
+            x, y = 10, 10
+            color = (140, 140, 140) if self.displayHint else uiData.textColor
+
+            totalHeight = len(lines) * (lineSize + lineBezel) - lineBezel
+            yOffset = (self.height - totalHeight) // 2
+
+            for line in lines:
+                rendered = self.font.render(line, True, color)
+                lineWidth = rendered.get_width()
+                x = (self.width - lineWidth) // 2
+                self.surface.blit(rendered, (x, yOffset))
+                yOffset += lineSize + lineBezel
+                
+            sw, sh = self.surface.get_size()
+            x = (self.width - sw) // 2
+            y = (self.height - sh) // 2
+            screen.blit(self.surface, (self.pos[0] + x, self.pos[1] + y))
 
     def tick(self, screen):
         self.draw(screen)
@@ -299,4 +327,5 @@ class textFieldPanel(SnappingPanel):
 
     def clicked(self, mx, my):
         self.text = windowTools.getText()
+        self.displayHint = False
         return self.text
