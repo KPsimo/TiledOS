@@ -65,6 +65,8 @@ def checkCollision(testWidget, newPos, newSize):
     return False
 
 def reloadWidgets():
+    global screenWidgets
+    screenWidgets = {}
     loadWidgetsState()
 
 screenWidgets = {}
@@ -310,7 +312,9 @@ while running:
                     widgetDescription = builderDescriptionInput.getText()
                     if widgetName != "" and widgetDescription != "":
                         widgetBuilder.buildAssembly(widgetDescription, widgetName)
-                        print("Built assembly:", widgetName)
+                        reloadWidgets()
+                        widgets.reloadWidgets()
+                        widgetPalette.reloadHeight()
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouseDownStartTime = time.time()

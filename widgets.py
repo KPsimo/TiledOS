@@ -234,34 +234,43 @@ class Clock(Widget):
 
 # --- Import Widgets & Assemblies --- #
 
-allWidgets = {
-    "Clock": Clock(),
-    "Calendar": Calendar()
-}
+allWidgets = {}
 
-def addWidget(widgetName, widget):
-    allWidgets[widgetName] = widget
+def reloadWidgets():
+    global allWidgets
 
-def loadWidgets():
-    widgetsDir = "assemblies"
-    sys.path.insert(0, widgetsDir)
+    allWidgets = {
+        "Clock": Clock(),
+        "Calendar": Calendar()
+    }
 
-    loaded = []
-    for file in os.listdir(widgetsDir):
-        if not file.endswith(".py"):
-            continue
+    def addWidget(widgetName, widget):
+        allWidgets[widgetName] = widget
 
-        moduleName = file[:-3]
+    def loadWidgets():
+        widgetsDir = "assemblies"
+        sys.path.insert(0, widgetsDir)
 
-        try:
-            mod = importlib.import_module(moduleName)
-            cls = getattr(mod, "WIDGET_CLASS")
-            loaded.append(cls())
-        except Exception as e:
-            print("failed to load", file, e)
+        loaded = []
+        for file in os.listdir(widgetsDir):
+            if not file.endswith(".py"):
+                continue
 
-    return loaded
+            moduleName = file[:-3]
 
-loadedWidgets = loadWidgets()
-for widget in loadedWidgets:
-    addWidget(widget.name, widget)
+            try:
+                mod = importlib.import_module(moduleName)
+                cls = getattr(mod, "WIDGET_CLASS")
+                loaded.append(cls())
+            except Exception as e:
+                print("failed to load", file, e)
+
+        return loaded
+
+    loadedWidgets = loadWidgets()
+    for widget in loadedWidgets:
+        addWidget(widget.name, widget)
+    
+    print(allWidgets)
+
+reloadWidgets()
