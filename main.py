@@ -228,14 +228,6 @@ while running:
                     mouseDownStartTime = None
         # event check end
 
-        # action panel hold check
-        if mouseDownStartTime is not None:
-            elapsed = time.time() - mouseDownStartTime
-            if elapsed >= actionPanelHoldTime:
-                showActionPanel = not showActionPanel
-                if not editMode: saveWidgetsState()
-                mouseDownStartTime = None
-
         if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
         elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
 
@@ -283,9 +275,7 @@ while running:
     elif currentPage == "builder":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False   
-        
-            builderNameInput.handleEvent(event)
+                running = False
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 showActionPanel = not showActionPanel
@@ -297,6 +287,15 @@ while running:
                     
                     elif actionPanelOut == "toggleActionPanel":
                         showActionPanel = not showActionPanel
+            else:
+                builderNameInput.handleEvent(event)
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouseDownStartTime = time.time()
+                mouseDownPos = event.pos
+
+            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                mouseDownStartTime = None
 
         screen.fill(uiData.backgroundColor)
 
@@ -306,6 +305,13 @@ while running:
         builderNameInput.tick(screen)
 
     # Always active
+    if mouseDownStartTime is not None:
+            elapsed = time.time() - mouseDownStartTime
+            if elapsed >= actionPanelHoldTime:
+                showActionPanel = not showActionPanel
+                if not editMode: saveWidgetsState()
+                mouseDownStartTime = None
+
     if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
     elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2
 
