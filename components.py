@@ -180,6 +180,7 @@ class actionPanel(CenteredPanel):
         elif self.page == "builder":
             self.icons = {
                 "power" : pygame.image.load("resources/icons/power.png").convert_alpha(),
+                "back" : pygame.image.load("resources/icons/back.png").convert_alpha(),
                 "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
             }
             newWidth = self.iconSize * len(self.icons)
@@ -230,6 +231,8 @@ class actionPanel(CenteredPanel):
             if index == 0:
                 return "quit"
             elif index == 1:
+                return "back"
+            elif index == 2:
                 return "toggleActionPanel"
 
             return None

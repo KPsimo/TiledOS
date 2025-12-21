@@ -28,6 +28,7 @@ class Widget:
 
         # position easing state
         self.targetPos = (float(pos[0]), float(pos[1]))
+        self.returnPos = self.targetPos
         self.posSnapped = True
 
         self.easeSpeed = 0.25
@@ -98,9 +99,15 @@ class Widget:
 
     def overrideActualPosition(self, x, y):
         self.pos = (x, y)
+        self.returnPos = self.targetPos
         self.targetPos = (x, y)
         self.posSnapped = True
         self.posOverridden = True
+
+    def disableOverride(self):
+        self.posOverridden = False
+        self.targetPos = self.returnPos
+        self.posSnapped = False
 
     def setColor(self, color):
         self.color = color

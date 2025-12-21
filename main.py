@@ -64,6 +64,9 @@ def checkCollision(testWidget, newPos, newSize):
             return True
     return False
 
+def reloadWidgets():
+    loadWidgetsState()
+
 screenWidgets = {}
 
 loadWidgetsState()
@@ -104,6 +107,8 @@ mouseDownStartTime = None
 tEditModeBackgroundColor = 0
 
 tActionPanelOpacity = 0
+
+displayWidget = widgets.Clock()
 
 while running:
     if currentPage == "main":
@@ -291,6 +296,12 @@ while running:
                     
                     elif actionPanelOut == "toggleActionPanel":
                         showActionPanel = not showActionPanel
+
+                    elif actionPanelOut == "back":
+                        currentPage = "main"
+                        actionPanel.setPage("main")
+                        reloadWidgets()
+                        showActionPanel = not showActionPanel
             else:
                 builderNameInput.handleEvent(event)
                 builderDescriptionInput.handleEvent(event)
@@ -316,8 +327,6 @@ while running:
         builderNameInput.tick(screen)
         builderDescriptionInput.tick(screen)
         builderAssembleButton.tick(screen)
-        
-        displayWidget = screenWidgets["Clock"]
 
         displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
         displayWidget.tick(screen)
