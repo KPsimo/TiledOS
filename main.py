@@ -326,7 +326,8 @@ while running:
     if mouseDownStartTime is not None:
             elapsed = time.time() - mouseDownStartTime
             if elapsed >= actionPanelHoldTime:
-                showActionPanel = not showActionPanel
+                if editMode: editMode = not editMode
+                else: showActionPanel = not showActionPanel
                 if not editMode: saveWidgetsState()
                 mouseDownStartTime = None
 
