@@ -232,6 +232,47 @@ class Clock(Widget):
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
 
+class Stopwatch(Widget):
+    preferredSizes = [(2, 1), (4, 2)]
+    def __init__(self, width=2, height=1, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        self.startTime = None
+        self.elapsedTime = 0
+        self.running = False
+
+    def start(self):
+        if not self.running:
+            self.startTime = time.time() - self.elapsedTime
+            self.running = True
+
+    def stop(self):
+        if self.running:
+            self.elapsedTime = time.time() - self.startTime
+            self.running = False
+
+    def reset(self):
+        self.startTime = None
+        self.elapsedTime = 0
+        self.running = False
+
+    def update(self):
+        if self.running:
+            self.elapsedTime = time.time() - self.startTime
+
+    def drawContent(self):
+        minutes = int(self.elapsedTime // 60)
+        seconds = int(self.elapsedTime % 60)
+        timeStr = f"{minutes:02}:{seconds:02}"
+        text = self.fonts[int(self.height-1)].render(timeStr, True, uiData.textColor)
+        textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+        self.surface.blit(text, textRect)
+
+    def clicked(self, mx, my):
+        if self.running:
+            self.stop()
+        else:
+            self.start()
+
 # --- Import Widgets & Assemblies --- #
 
 allWidgets = {}
@@ -241,7 +282,8 @@ def reloadWidgets():
 
     allWidgets = {
         "Clock": Clock(),
-        "Calendar": Calendar()
+        "Calendar": Calendar(),
+        "Stopwatch": Stopwatch()
     }
 
     def addWidget(widgetName, widget):
