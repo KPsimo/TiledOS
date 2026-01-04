@@ -82,6 +82,10 @@ currentPage = "main"
 
 clock = pygame.time.Clock()
 
+bgPath = os.path.join("resources", "backgrounds", "default-dark.jpg")
+useBgColor = False
+showGrid = False
+
 actionPanel = components.actionPanel()
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
@@ -112,7 +116,12 @@ tActionPanelOpacity = 0
 
 displayWidget = widgets.Clock()
 
+bg = pygame.image.load(bgPath)
+bg = pygame.transform.scale(bg, (uiData.screenWidth, uiData.screenHeight))
+
 while running:
+    screen.blit(bg, (0, 0))
+
     if currentPage == "main":
         for event in pygame.event.get():
             # check quit
@@ -244,7 +253,7 @@ while running:
 
         if tEditModeBackgroundColor < 0: tEditModeBackgroundColor = 0
 
-        screen.fill(
+        if useBgColor: screen.fill(
             uiTools.interpolateColors(uiData.backgroundColor,
                                     uiData.backgroundColorEditMode,
                                     tEditModeBackgroundColor))
@@ -253,7 +262,7 @@ while running:
         if col_check[:3] != (0, 0, 0):
             drawGrid(screen, uiTools.interpolateColors(
                 uiData.backgroundColor,
-                (50, 50, 50),
+                (50, 50, 50, 255),
                 tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
 
         # draw backmost layer
@@ -323,8 +332,7 @@ while running:
             elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                 mouseDownStartTime = None
 
-        screen.fill(uiData.backgroundColor)
-
+        if useBgColor: screen.fill(uiData.backgroundColor)
         # builderPanel.tick(screen)
         builderTitleBar.tick(screen)
         

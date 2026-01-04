@@ -50,7 +50,8 @@ class FloatingPanel:
         roundedBg = uiTools.makeRoundedSurface(
             self.surface.get_size(),
             uiData.cornerRadius,
-            uiData.primaryTransparentColor
+            uiData.widgetBackgroundColor,
+            outlineWidth=0
         )
 
         self.surface.blit(roundedBg, (0, 0))
@@ -100,7 +101,8 @@ class CenteredPanel(FloatingPanel):
         roundedBg = uiTools.makeRoundedSurface(
             self.surface.get_size(),
             uiData.cornerRadius,
-            uiData.widgetBackgroundColor
+            uiData.widgetBackgroundColor,
+            outlineWidth=0
         )
 
         self.surface.blit(roundedBg, (0, 0))
@@ -292,7 +294,8 @@ class textFieldPanel(SnappingPanel):
         roundedBg = uiTools.makeRoundedSurface(
             self.surface.get_size(),
             uiData.cornerRadius,
-            self.color
+            self.color,
+            outlineWidth=0
         )
 
         self.surface.blit(roundedBg, (0, 0))
@@ -366,7 +369,8 @@ class button(SnappingPanel):
         roundedBg = uiTools.makeRoundedSurface(
             self.surface.get_size(),
             uiData.cornerRadius,
-            self.color
+            self.color,
+            outlineWidth=0
         )
 
         self.surface.blit(roundedBg, (0, 0))

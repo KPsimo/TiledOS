@@ -6,9 +6,11 @@ quickScale = 1
 cellSize = 110 * quickScale
 cellPadding = 10 * quickScale
 
-backgroundColor = (10, 10, 10)
+backgroundColor = (10, 10, 10, 0)
 
-widgetBackgroundColor = (30, 30, 30, 255)
+
+widgetOutlineWidth = 0
+widgetBackgroundColor = (30, 30, 30, 230)
 widgetBackgroundColorProgression = (widgetBackgroundColor[0] + 10, widgetBackgroundColor[1] + 10, widgetBackgroundColor[2] + 10, 240)
 widgetBackgroundColorCollision = (80, 30, 30)
 

@@ -1,28 +1,35 @@
 import pygame
 
-def makeRoundedSurface(size, radius, color):
+def makeRoundedSurface(size, radius, color, outlineWidth):
     scale = 3
     big = pygame.Surface((size[0] * scale, size[1] * scale), pygame.SRCALPHA)
     big.fill((0,0,0,0))
-    pygame.draw.rect(big, color=color, rect=big.get_rect(), border_radius=radius * scale)
+    pygame.draw.rect(big, color=color, rect=big.get_rect(), border_radius=radius * scale, width=outlineWidth * scale)
     return pygame.transform.smoothscale(big, size)
 
 def interpolateColors(startColor, endColor, t):
     # Clamp t to [0,1]
-    if t < 0: t = 0
-    if t > 1: t = 1
+    t = max(0.0, min(1.0, float(t)))
 
-    # Determine how many channels to produce (support RGB or RGBA inputs)
-    max_len = max(len(startColor), len(endColor))
+    sC = tuple(startColor)
+    eC = tuple(endColor)
+
+    # If either color has alpha, produce RGBA output; otherwise RGB
+    target_len = 4 if (len(sC) == 4 or len(eC) == 4) else 3
 
     out = []
-    for i in range(max_len):
-        # default missing components: for alpha (index 3) default to 255 (opaque), else 0
+    for i in range(target_len):
         default = 255 if i == 3 else 0
-        s = startColor[i] if i < len(startColor) else default
-        e = endColor[i] if i < len(endColor) else default
+        s = sC[i] if i < len(sC) else default
+        e = eC[i] if i < len(eC) else default
+
+        # Accept float channels in 0.0-1.0 by scaling to 0-255
+        if isinstance(s, float) and 0.0 <= s <= 1.0:
+            s = int(round(s * 255))
+        if isinstance(e, float) and 0.0 <= e <= 1.0:
+            e = int(round(e * 255))
+
         val = int(round(s + (e - s) * t))
-        # clamp channel to valid byte range
         val = max(0, min(255, val))
         out.append(val)
 

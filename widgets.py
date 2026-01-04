@@ -118,9 +118,22 @@ class Widget:
             roundedBg = uiTools.makeRoundedSurface(
                 self.surface.get_size(),
                 uiData.cornerRadius,
-                self.color
+                self.color,
+                outlineWidth=0
             )
+
             self.surface.blit(roundedBg, (0, 0))
+
+            if uiData.widgetOutlineWidth > 0:
+                roundedOutline = uiTools.makeRoundedSurface(
+                    self.surface.get_size(),
+                    uiData.cornerRadius,
+                    uiData.textColor,
+                    outlineWidth=uiData.widgetOutlineWidth
+                )
+
+                self.surface.blit(roundedOutline, (0, 0))
+
             self.drawContent()
             if self.posOverridden:
                 x, y = self.pos
@@ -133,9 +146,22 @@ class Widget:
             roundedBg = uiTools.makeRoundedSurface(
                 self.surface.get_size(),
                 uiData.cornerRadius,
-                self.color
+                self.color,
+                outlineWidth=0
             )
+
             self.surface.blit(roundedBg, (0, 0))
+
+            if uiData.widgetOutlineWidth > 0:
+                roundedOutline = uiTools.makeRoundedSurface(
+                    self.surface.get_size(),
+                    uiData.cornerRadius,
+                    uiData.textColor,
+                    outlineWidth=uiData.widgetOutlineWidth
+                )
+
+                self.surface.blit(roundedOutline, (0, 0))
+
             self.drawContent()
             if self.posOverridden:
                 x, y = self.pos
