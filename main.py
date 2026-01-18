@@ -258,11 +258,10 @@ while running:
                                     uiData.backgroundColorEditMode,
                                     tEditModeBackgroundColor))
 
-        col_check = uiTools.interpolateColors(uiData.backgroundColor, (50, 50, 50, 100), tEditModeBackgroundColor)
-        if col_check[:3] != (0, 0, 0):
+        if tEditModeBackgroundColor > 0:
             drawGrid(screen, uiTools.interpolateColors(
-                uiData.backgroundColor,
                 (50, 50, 50, 255),
+                uiData.backgroundColor,
                 tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
 
         # draw backmost layer
