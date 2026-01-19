@@ -396,8 +396,7 @@ class PomodoroTimer(Widget):
         self.startTime = None
         self.elapsedTime = 0
         self.running = False
-        self.fadedTextColor = (170, 170, 170)
-        self.textColor = self.fadedTextColor
+        self.textColor = uiData.textColor
 
         self.totalWorkTime = 20 * 60
         self.totalBreakTime = 5 * 60
