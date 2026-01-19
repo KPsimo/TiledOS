@@ -227,15 +227,25 @@ class Widget:
 
 class Calendar(Widget):
     preferredSizes = [(3, 1), (6, 2)]
+
     def __init__(self, width=1, height=1, pos=(0, 0)):
         super().__init__(width, height, pos)
         pygame.font.init()
         self.font = pygame.font.Font('resources/outfit.ttf', 50)
 
+    def clicked(self, mx, my):
+        # Switch to calendar view/screen
+        uiData.currentPage = "calendar"
+        print("SWITCHED PAGE:", uiData.currentPage) #just checking
+
+
     def drawContent(self):
         text = self.font.render("Calendar", True, uiData.textColor)
-        text_rect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+        text_rect = text.get_rect(
+        center=(self.surface.get_width() // 2, self.surface.get_height() // 2)
+        )
         self.surface.blit(text, text_rect)
+
 
 class Clock(Widget):
     preferredSizes = [(3, 1), (6, 2)]

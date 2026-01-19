@@ -8,6 +8,7 @@ import components
 import time
 import windowTools
 import widgetBuilder
+import data.uiData as uiData
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -78,8 +79,6 @@ pygame.font.init()
 screen = pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight), pygame.FULLSCREEN)
 pygame.display.set_caption("TiledOS")
 
-currentPage = "main"
-
 clock = pygame.time.Clock()
 
 bgPath = os.path.join("resources", "backgrounds", "default-dark.jpg")
@@ -122,7 +121,7 @@ bg = pygame.transform.scale(bg, (uiData.screenWidth, uiData.screenHeight))
 while running:
     screen.blit(bg, (0, 0))
 
-    if currentPage == "main":
+    if uiData.currentPage == "main":
         for event in pygame.event.get():
             # check quit
             if event.type == pygame.QUIT:
@@ -137,7 +136,7 @@ while running:
                         saveWidgetsState()
 
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
-                    currentPage = "builder"
+                    uiData.currentPage = "builder"
                     actionPanel.setPage("builder")
 
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -155,7 +154,7 @@ while running:
                         showActionPanel = not showActionPanel
 
                     elif actionPanelOut == "openBuilder":
-                        currentPage = "builder"
+                        uiData.currentPage = "builder"
                         actionPanel.setPage("builder")
                         showActionPanel = not showActionPanel
 
@@ -292,7 +291,7 @@ while running:
         # widget palette
         if editMode: widgetPalette.tick(screen)        
     
-    elif currentPage == "builder":
+    elif uiData.currentPage == "builder":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -309,7 +308,7 @@ while running:
                         showActionPanel = not showActionPanel
 
                     elif actionPanelOut == "back":
-                        currentPage = "main"
+                        uiData.currentPage = "main"
                         actionPanel.setPage("main")
                         reloadWidgets()
                         showActionPanel = not showActionPanel
@@ -342,8 +341,22 @@ while running:
 
         displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
         displayWidget.tick(screen)
+    elif uiData.currentPage == "calendar":
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    # Always active
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                uiData.currentPage = "main"
+
+        screen.fill((10, 10, 10))
+        font = pygame.font.Font('resources/outfit.ttf', 80)
+        text = font.render("CALENDAR SCREEN", True, uiData.textColor)
+        screen.blit(text, (80, 80))
+
+
+
+    # Always active 
     if mouseDownStartTime is not None:
             elapsed = time.time() - mouseDownStartTime
             if elapsed >= actionPanelHoldTime:
