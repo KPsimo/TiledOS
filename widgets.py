@@ -255,6 +255,10 @@ class Clock(Widget):
         self.hours = self.currentTime.tm_hour
         self.minutes = self.currentTime.tm_min
         self.seconds = self.currentTime.tm_sec
+        self.ampm = "AM"
+
+        self.styles = ["hh:mm", "hh:mm:ss", "hh:mm AM/PM", "hh:mm:ss AM/PM"]
+        self.style = 0;
 
     def update(self):
         self.currentTime = time.localtime()
@@ -262,11 +266,31 @@ class Clock(Widget):
         self.minutes = self.currentTime.tm_min
         self.seconds = self.currentTime.tm_sec
 
+        # ap/pm logic
+        if (self.hours > 12):
+            self.hours -= 12
+            self.ampm = "PM"
+        else:
+            self.ampm = "AM"
+
     def drawContent(self):
-        timeStr = f"{self.hours:02}:{self.minutes:02}:{self.seconds:02}"
+        if (self.style == 0):
+            timeStr = f"{self.hours:02}:{self.minutes:02}"
+        elif (self.style == 1):
+            timeStr = f"{self.hours:02}:{self.minutes:02}:{self.seconds:02}"
+        elif (self.style == 2):
+            timeStr = f"{self.hours:02}:{self.minutes:02} {self.ampm}"
+        elif (self.style == 3):
+            timeStr = f"{self.hours:02}:{self.minutes:02}:{self.seconds:02} {self.ampm}"
+        
         text = self.fonts[int(self.height-1)].render(timeStr, True, uiData.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
+
+    def clicked(self, mx, my):
+        self.style += 1;
+        if self.style >= len(self.styles):
+            self.style = 0;
 
 class Stopwatch(Widget):
     preferredSizes = [(2, 1), (4, 2)]
@@ -275,16 +299,20 @@ class Stopwatch(Widget):
         self.startTime = None
         self.elapsedTime = 0
         self.running = False
+        self.fadedTextColor = (170, 170, 170)
+        self.textColor = self.fadedTextColor
 
     def start(self):
         if not self.running:
             self.startTime = time.time() - self.elapsedTime
             self.running = True
+            self.textColor = uiData.textColor
 
     def stop(self):
         if self.running:
             self.elapsedTime = time.time() - self.startTime
             self.running = False
+            self.textColor = self.fadedTextColor
 
     def reset(self):
         self.startTime = None
@@ -298,16 +326,145 @@ class Stopwatch(Widget):
     def drawContent(self):
         minutes = int(self.elapsedTime // 60)
         seconds = int(self.elapsedTime % 60)
+        milliseconds = int((self.elapsedTime - int(self.elapsedTime)) * 100)
+
         timeStr = f"{minutes:02}:{seconds:02}"
-        text = self.fonts[int(self.height-1)].render(timeStr, True, uiData.textColor)
+        text = self.fonts[int(self.height-1)].render(timeStr, True, self.textColor)
         textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, textRect)
+
+        clockCircleRadius = min(self.surface.get_width(), self.surface.get_height()) // 6
+        clockCircleCenter = (self.surface.get_width() - clockCircleRadius - 10, clockCircleRadius + 10)
+        pygame.draw.circle(self.surface, self.fadedTextColor, clockCircleCenter, clockCircleRadius, 2)
+        
+        if self.running:
+            elapsedFraction = (self.elapsedTime % 30) / 30.0
+            endAngle = -math.pi / 2 + elapsedFraction * 2 * math.pi
+            pygame.draw.arc(
+                self.surface,
+                self.fadedTextColor,
+                (
+                    clockCircleCenter[0] - clockCircleRadius,
+                    clockCircleCenter[1] - clockCircleRadius,
+                    clockCircleRadius * 2,
+                    clockCircleRadius * 2
+                ),
+                -math.pi / 2,
+                endAngle,
+                clockCircleRadius
+            )
 
     def clicked(self, mx, my):
         if self.running:
             self.stop()
         else:
             self.start()
+
+class Date(Widget):
+    preferredSizes = [(2, 1), (4, 2)]
+    def __init__(self, width=2, height=1, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        self.dayOfWeekNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        self.monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+        self.date = time.localtime()
+
+        self.wday = self.dayOfWeekNames[self.date.tm_wday]
+        self.day = self.date.tm_mday
+        self.month = self.date.tm_mon
+        self.monthName = self.monthNames[self.month-1]
+        self.year = self.date.tm_year
+
+        self.styles = ["numeric-short", "numeric-long", "textual-short", "textual-normal", "textual-long"]
+        self.style = 0
+
+    def drawContent(self):
+        if self.style == 0:
+            dateStr = f"{self.day}/{self.month}/{self.year}"
+        elif self.style == 1:
+            dateStr = f"{self.wday}, {self.month}/{self.day}"
+        elif self.style == 2:
+            dateStr = f"{self.monthName} {self.day}"
+        elif self.style == 3:
+            dateStr = f"{self.monthName} {self.day}, {self.year}"
+        else:
+            dateStr = f"{self.wday} {self.monthName} {self.day}, {self.year}"
+
+        text = self.fonts[int(self.height-1)].render(dateStr, True, uiData.textColor)
+        textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+        self.surface.blit(text, textRect)
+
+    def clicked(self, mx, my):
+        self.style += 1;
+        if self.style >= len(self.styles):
+            self.style = 0;
+
+class PomodoroTimer(Widget):
+    preferredSizes = [(2, 2), (4, 4)]
+    def __init__(self, width=2, height=1, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        self.startTime = None
+        self.elapsedTime = 0
+        self.running = False
+        self.textColor = uiData.textColor
+
+        self.totalWorkTime = 20 * 60
+        self.totalBreakTime = 5 * 60
+
+        self.workTime = self.totalWorkTime
+        self.breakTime = self.totalBreakTime
+
+        self.currentJob = "Work"
+
+        self.startTime = time.time()
+
+        self.fonts = []
+
+        for size in range(10):
+            self.fonts.append(pygame.font.Font('resources/outfit.ttf', 70 * size))
+
+        self.titleFonts = []
+
+        for size in range(10):
+            self.titleFonts.append(pygame.font.Font('resources/outfit.ttf', 85 * size))
+
+    def update(self):
+        elapsedTime = time.time() - self.startTime
+
+        if self.currentJob == "Work":
+            self.workTime = self.totalWorkTime - elapsedTime
+        
+            if self.workTime < 0:
+                self.workTime = self.totalWorkTime
+                self.currentJob = "Break"
+                self.startTime = time.time()
+
+        else:
+            self.breakTime = self.totalBreakTime - elapsedTime
+        
+            if self.breakTime < 0:
+                self.breakTime = self.totalBreakTime
+                self.currentJob = "Work"
+                self.startTime = time.time()
+
+
+    def drawContent(self):
+        if self.currentJob == "Work":
+            minutes = int(self.workTime // 60)
+            seconds = int(self.workTime % 60)
+            timeStr = f"{minutes:02}:{seconds:02}"
+        else:
+            minutes = int(self.breakTime // 60)
+            seconds = int(self.breakTime % 60)
+            timeStr = f"{minutes:02}:{seconds:02}"
+        
+        jobText = self.titleFonts[int(self.height-1)].render(self.currentJob, True, self.textColor)
+        jobTextRect = jobText.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 3))
+        self.surface.blit(jobText, jobTextRect)
+
+        timeText = self.fonts[int(self.height-1)].render(timeStr, True, self.textColor)
+        timeTextRect = timeText.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() - (self.surface.get_height() // 3)))
+        self.surface.blit(timeText, timeTextRect)
 
 # --- Import Widgets & Assemblies --- #
 
@@ -319,7 +476,9 @@ def reloadWidgets():
     allWidgets = {
         "Clock": Clock(),
         "Calendar": Calendar(),
-        "Stopwatch": Stopwatch()
+        "Stopwatch": Stopwatch(),
+        "Date": Date(),
+        "Pomodoro Timer": PomodoroTimer()
     }
 
     def addWidget(widgetName, widget):
@@ -348,7 +507,4 @@ def reloadWidgets():
     loadedWidgets = loadWidgets()
     for widget in loadedWidgets:
         addWidget(widget.name, widget)
-    
-    print(allWidgets)
-
 reloadWidgets()

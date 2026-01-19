@@ -11,7 +11,7 @@ class Space(Widget):
     
     def __init__(self, width=2, height=2, pos=(0, 0)):
         super().__init__(width, height, pos)
-        self.stars = [(random.randint(0, self.getActualSize()[0]), random.randint(0, self.getActualSize()[1]), random.uniform(0.2, 1)) for _ in range(10)]
+        self.stars = [(random.randint(0, self.getActualSize()[0]), random.randint(0, self.getActualSize()[1]), random.uniform(0.2, 1)) for _ in range(20)]
         
     def update(self):
         for i, star in enumerate(self.stars):
