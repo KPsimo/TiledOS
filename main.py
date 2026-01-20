@@ -340,6 +340,7 @@ while running:
 
         displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
         displayWidget.tick(screen)
+
     elif uiData.currentPage == "calendar":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

@@ -182,7 +182,7 @@ class actionPanel(CenteredPanel):
                 "assemble" : pygame.image.load("resources/icons/assemble.png").convert_alpha(),
                 "close" : pygame.image.load("resources/icons/close.png").convert_alpha(),
             }
-        elif self.page == "builder":
+        elif self.page == "builder" or self.page == "calendar":
             self.icons = {
                 "power" : pygame.image.load("resources/icons/power.png").convert_alpha(),
                 "back" : pygame.image.load("resources/icons/back.png").convert_alpha(),
