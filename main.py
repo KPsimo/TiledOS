@@ -1,3 +1,10 @@
+import sys
+import breakGuard
+
+if not breakGuard.checkAll():
+    print("Exiting due to missing files.")
+    sys.exit()
+
 import pygame
 import json
 import os
@@ -9,7 +16,6 @@ import time
 import windowTools
 import widgetBuilder
 import data.uiData as uiData
-import sys
 
 widgetsPath = os.path.join("data", "widgets.json")
 
