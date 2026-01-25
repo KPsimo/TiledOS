@@ -70,6 +70,12 @@ def reloadWidgets():
     screenWidgets = {}
     loadWidgetsState()
 
+def minimize():
+    pygame.display.iconify()
+
+def maximize():
+    pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight), pygame.FULLSCREEN)
+
 screenWidgets = {}
 
 loadWidgetsState()
@@ -81,308 +87,309 @@ pygame.display.set_caption("TiledOS")
 
 clock = pygame.time.Clock()
 
-bgPath = os.path.join("resources", "backgrounds", "default-dark.jpg")
-useBgColor = False
-showGrid = False
+if __name__ == "__main__":
+    bgPath = os.path.join("resources", "backgrounds", "default-dark.jpg")
+    useBgColor = False
+    showGrid = False
 
-actionPanel = components.actionPanel()
-widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
+    actionPanel = components.actionPanel()
+    widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
-widgetPalette.setLoadedWidgets(screenWidgets)
+    widgetPalette.setLoadedWidgets(screenWidgets)
 
-builderTitleBar = components.snappingTitleBar("Create Assembly")
-builderPanel = components.widgetBuilderPanel()
+    builderTitleBar = components.snappingTitleBar("Create Assembly")
+    builderPanel = components.widgetBuilderPanel()
 
-builderNameInput = components.textFieldPanel(1100, 110, (-1, 550), fontSize=60, hint="Widget Name")
-builderDescriptionInput = components.textFieldPanel(1100, 250, (-1, 680), fontSize=40, hint="Widget Description")
+    builderNameInput = components.textFieldPanel(1100, 110, (-1, 550), fontSize=60, hint="Widget Name")
+    builderDescriptionInput = components.textFieldPanel(1100, 250, (-1, 680), fontSize=40, hint="Widget Description")
 
-builderAssembleButton = components.button("Assemble", 1100, 90, (-1, 950), fontSize=60)
+    builderAssembleButton = components.button("Assemble", 1100, 90, (-1, 950), fontSize=60)
 
-running = True
+    running = True
 
-draggingWidget = None
-dragOffsetPixels = (0, 0)
-resizingWidget = None
-resizeStartPos = None
+    draggingWidget = None
+    dragOffsetPixels = (0, 0)
+    resizingWidget = None
+    resizeStartPos = None
 
-editMode = False
+    editMode = False
 
-showActionPanel = False
-actionPanelHoldTime = .75
-mouseDownStartTime = None
+    showActionPanel = False
+    actionPanelHoldTime = .75
+    mouseDownStartTime = None
 
-tEditModeBackgroundColor = 0
+    tEditModeBackgroundColor = 0
 
-tActionPanelOpacity = 0
+    tActionPanelOpacity = 0
 
-displayWidget = widgets.Clock()
+    displayWidget = widgets.Clock()
 
-bg = pygame.image.load(bgPath)
-bg = pygame.transform.scale(bg, (uiData.screenWidth, uiData.screenHeight))
+    bg = pygame.image.load(bgPath)
+    bg = pygame.transform.scale(bg, (uiData.screenWidth, uiData.screenHeight))
 
-while running:
-    screen.blit(bg, (0, 0))
+    while running:
+        screen.blit(bg, (0, 0))
 
-    if uiData.currentPage == "main":
-        for event in pygame.event.get():
-            # check quit
-            if event.type == pygame.QUIT:
-                running = False   
+        if uiData.currentPage == "main":
+            for event in pygame.event.get():
+                # check quit
+                if event.type == pygame.QUIT:
+                    running = False   
 
-            # check normal events 
-            if True:
-                # always active events
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
-                    editMode = not editMode
-                    if not editMode:
-                        saveWidgetsState()
-
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
-                    uiData.currentPage = "builder"
-                    actionPanel.setPage("builder")
-
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    showActionPanel = not showActionPanel
-
-                if showActionPanel:
-                    actionPanelOut = actionPanel.handleEvent(event)
-                    if actionPanelOut == "quit":
-                        running = False
-                    
-                    elif actionPanelOut == "toggleEdit":
+                # check normal events 
+                if True:
+                    # always active events
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
                         editMode = not editMode
                         if not editMode:
                             saveWidgetsState()
-                        showActionPanel = not showActionPanel
 
-                    elif actionPanelOut == "openBuilder":
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
                         uiData.currentPage = "builder"
                         actionPanel.setPage("builder")
+
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                         showActionPanel = not showActionPanel
 
-                    elif actionPanelOut == "toggleActionPanel":
-                        showActionPanel = not showActionPanel
+                    if showActionPanel:
+                        actionPanelOut = actionPanel.handleEvent(event)
+                        if actionPanelOut == "quit":
+                            running = False
+                        
+                        elif actionPanelOut == "toggleEdit":
+                            editMode = not editMode
+                            if not editMode:
+                                saveWidgetsState()
+                            showActionPanel = not showActionPanel
 
-                # not edit mode events
-                if not editMode:
-                    for widget in screenWidgets.values():
-                        widget.handleEvent(event)
+                        elif actionPanelOut == "openBuilder":
+                            uiData.currentPage = "builder"
+                            actionPanel.setPage("builder")
+                            showActionPanel = not showActionPanel
 
-                # edit mode events
-                if editMode:
-                    widgetPaletteOut = widgetPalette.handleEvent(event)
-                    if widgetPaletteOut is not None:
-                        widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
-                        if widgetName in screenWidgets:
-                            del screenWidgets[widgetName]
-                        else:
-                            addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
+                        elif actionPanelOut == "toggleActionPanel":
+                            showActionPanel = not showActionPanel
 
+                    # not edit mode events
+                    if not editMode:
+                        for widget in screenWidgets.values():
+                            widget.handleEvent(event)
 
-
-            # check edit mode events
-            if True:
-                widgetPalette.setLoadedWidgets(screenWidgets)
-
-                if not widgetPalette.getRect().collidepoint(pygame.mouse.get_pos()):
+                    # edit mode events
                     if editMode:
-                        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        widgetPaletteOut = widgetPalette.handleEvent(event)
+                        if widgetPaletteOut is not None:
+                            widgetName = list(widgets.allWidgets.keys())[widgetPaletteOut]
+                            if widgetName in screenWidgets:
+                                del screenWidgets[widgetName]
+                            else:
+                                addWidget(widgetName, widgets.allWidgets[list(widgets.allWidgets.keys())[widgetPaletteOut]])
+
+
+
+                # check edit mode events
+                if True:
+                    widgetPalette.setLoadedWidgets(screenWidgets)
+
+                    if not widgetPalette.getRect().collidepoint(pygame.mouse.get_pos()):
+                        if editMode:
+                            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                                mx, my = event.pos
+                                for widget in screenWidgets.values():
+                                    wPos = widget.getActualPosition()
+                                    wSize = widget.getActualSize()
+                                    resizeHandleSize = 40
+
+                                    bottomRight = (wPos[0] + wSize[0], wPos[1] + wSize[1])
+
+                                    if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
+                                        and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
+                                        resizingWidget = widget
+                                        resizeStartPos = (mx - uiData.cellSize, my - uiData.cellSize)
+                                        break
+
+                                    elif wPos[0] <= mx <= wPos[0] + wSize[0] and wPos[1] <= my <= wPos[1] + wSize[1]:
+                                        draggingWidget = widget
+                                        dragOffsetPixels = ((mx - wPos[0]) - uiData.cellSize/2, (my - wPos[1]) - uiData.cellSize/2)
+                                        break
+
+                            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                                draggingWidget = None
+                                resizingWidget = None
+                                resizeStartPos = None
+
+                            elif event.type == pygame.MOUSEMOTION:
+                                if draggingWidget is not None:
+                                    mx, my = event.pos
+                                    newLeft = mx - dragOffsetPixels[0]
+                                    newTop = my - dragOffsetPixels[1]
+                                    cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
+                                    newX = newLeft // cellSizeWithPadding
+                                    newY = newTop // cellSizeWithPadding
+                                    newX = max(0, newX)
+                                    newY = max(0, newY)
+                                    if not checkCollision(draggingWidget, (newX, newY), (draggingWidget.width, draggingWidget.height)):
+                                        draggingWidget.setPosition(newX, newY)
+
+                                elif resizingWidget is not None:
+                                    mx, my = event.pos
+                                    mx += uiData.cellSize // 2
+                                    my += uiData.cellSize // 2
+                                    wPos = resizingWidget.getActualPosition()
+                                    cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
+                                    newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
+                                    newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
+                                    if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
+                                        resizingWidget.setSize(newWidthCells, newHeightCells)
+
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        mouseDownStartTime = time.time()
+                        mouseDownPos = event.pos
+
+                    elif event.type == pygame.MOUSEMOTION:
+                        if mouseDownStartTime is not None:
                             mx, my = event.pos
-                            for widget in screenWidgets.values():
-                                wPos = widget.getActualPosition()
-                                wSize = widget.getActualSize()
-                                resizeHandleSize = 40
+                            dx = mx - mouseDownPos[0]
+                            dy = my - mouseDownPos[1]
+                            if abs(dx) > 6 or abs(dy) > 6:
+                                mouseDownStartTime = None
 
-                                bottomRight = (wPos[0] + wSize[0], wPos[1] + wSize[1])
+                    elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                        mouseDownStartTime = None
+            # event check end
 
-                                if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
-                                    and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
-                                    resizingWidget = widget
-                                    resizeStartPos = (mx - uiData.cellSize, my - uiData.cellSize)
-                                    break
+            if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
+            elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
 
-                                elif wPos[0] <= mx <= wPos[0] + wSize[0] and wPos[1] <= my <= wPos[1] + wSize[1]:
-                                    draggingWidget = widget
-                                    dragOffsetPixels = ((mx - wPos[0]) - uiData.cellSize/2, (my - wPos[1]) - uiData.cellSize/2)
-                                    break
+            if tEditModeBackgroundColor < 0: tEditModeBackgroundColor = 0
 
-                        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                            draggingWidget = None
-                            resizingWidget = None
-                            resizeStartPos = None
+            if useBgColor: screen.fill(
+                uiTools.interpolateColors(uiData.backgroundColor,
+                                        uiData.backgroundColorEditMode,
+                                        tEditModeBackgroundColor))
 
-                        elif event.type == pygame.MOUSEMOTION:
-                            if draggingWidget is not None:
-                                mx, my = event.pos
-                                newLeft = mx - dragOffsetPixels[0]
-                                newTop = my - dragOffsetPixels[1]
-                                cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
-                                newX = newLeft // cellSizeWithPadding
-                                newY = newTop // cellSizeWithPadding
-                                newX = max(0, newX)
-                                newY = max(0, newY)
-                                if not checkCollision(draggingWidget, (newX, newY), (draggingWidget.width, draggingWidget.height)):
-                                    draggingWidget.setPosition(newX, newY)
+            if tEditModeBackgroundColor > 0:
+                drawGrid(screen, uiTools.interpolateColors(
+                    (50, 50, 50, 255),
+                    uiData.backgroundColor,
+                    tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
 
-                            elif resizingWidget is not None:
-                                mx, my = event.pos
-                                mx += uiData.cellSize // 2
-                                my += uiData.cellSize // 2
-                                wPos = resizingWidget.getActualPosition()
-                                cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
-                                newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
-                                newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
-                                if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
-                                    resizingWidget.setSize(newWidthCells, newHeightCells)
+            # draw backmost layer
+
+            if draggingWidget is not None: draggingWidget.setColor(uiData.widgetBackgroundColorProgression)
+            elif resizingWidget is not None: resizingWidget.setColor(uiData.widgetBackgroundColorProgression)
+
+            if draggingWidget is None and resizingWidget is None:
+                for widget in screenWidgets.values():
+                    widget.setColor(uiData.widgetBackgroundColor)
+
+            for widget in screenWidgets.values():
+                widget.tick(screen)
+
+                if editMode:
+                    wPos = widget.getActualPosition()
+                    wSize = widget.getActualSize()
+                    pygame.draw.circle(
+                        screen,
+                        (180, 180, 180),
+                        (int(wPos[0] + wSize[0] - 5), int(wPos[1] + wSize[1] - 5)),
+                        5
+                    )
+            
+            # draw frontmost layer
+
+            # widget palette
+            if editMode: widgetPalette.tick(screen)        
+        
+        elif uiData.currentPage == "builder":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    showActionPanel = not showActionPanel
+                
+                if showActionPanel:
+                        actionPanelOut = actionPanel.handleEvent(event)
+                        if actionPanelOut == "quit":
+                            running = False
+                        
+                        elif actionPanelOut == "toggleActionPanel":
+                            showActionPanel = not showActionPanel
+
+                        elif actionPanelOut == "back":
+                            uiData.currentPage = "main"
+                            actionPanel.setPage("main")
+                            reloadWidgets()
+                            showActionPanel = not showActionPanel
+                else:
+                    builderNameInput.handleEvent(event)
+                    builderDescriptionInput.handleEvent(event)
+                    if builderAssembleButton.handleEvent(event) == "clicked":
+                        widgetName = builderNameInput.getText()
+                        widgetDescription = builderDescriptionInput.getText()
+                        if widgetName != "" and widgetDescription != "":
+                            widgetBuilder.buildAssembly(widgetDescription, widgetName)
+                            reloadWidgets()
+                            widgets.reloadWidgets()
+                            widgetPalette.reloadHeight()
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouseDownStartTime = time.time()
                     mouseDownPos = event.pos
 
-                elif event.type == pygame.MOUSEMOTION:
-                    if mouseDownStartTime is not None:
-                        mx, my = event.pos
-                        dx = mx - mouseDownPos[0]
-                        dy = my - mouseDownPos[1]
-                        if abs(dx) > 6 or abs(dy) > 6:
-                            mouseDownStartTime = None
-
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                     mouseDownStartTime = None
-        # event check end
 
-        if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
-        elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
-
-        if tEditModeBackgroundColor < 0: tEditModeBackgroundColor = 0
-
-        if useBgColor: screen.fill(
-            uiTools.interpolateColors(uiData.backgroundColor,
-                                    uiData.backgroundColorEditMode,
-                                    tEditModeBackgroundColor))
-
-        if tEditModeBackgroundColor > 0:
-            drawGrid(screen, uiTools.interpolateColors(
-                (50, 50, 50, 255),
-                uiData.backgroundColor,
-                tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
-
-        # draw backmost layer
-
-        if draggingWidget is not None: draggingWidget.setColor(uiData.widgetBackgroundColorProgression)
-        elif resizingWidget is not None: resizingWidget.setColor(uiData.widgetBackgroundColorProgression)
-
-        if draggingWidget is None and resizingWidget is None:
-            for widget in screenWidgets.values():
-                widget.setColor(uiData.widgetBackgroundColor)
-
-        for widget in screenWidgets.values():
-            widget.tick(screen)
-
-            if editMode:
-                wPos = widget.getActualPosition()
-                wSize = widget.getActualSize()
-                pygame.draw.circle(
-                    screen,
-                    (180, 180, 180),
-                    (int(wPos[0] + wSize[0] - 5), int(wPos[1] + wSize[1] - 5)),
-                    5
-                )
-        
-        # draw frontmost layer
-
-        # widget palette
-        if editMode: widgetPalette.tick(screen)        
-    
-    elif uiData.currentPage == "builder":
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                showActionPanel = not showActionPanel
+            if useBgColor: screen.fill(uiData.backgroundColor)
+            # builderPanel.tick(screen)
+            builderTitleBar.tick(screen)
             
-            if showActionPanel:
-                    actionPanelOut = actionPanel.handleEvent(event)
-                    if actionPanelOut == "quit":
-                        running = False
-                    
-                    elif actionPanelOut == "toggleActionPanel":
-                        showActionPanel = not showActionPanel
+            builderNameInput.tick(screen)
+            builderDescriptionInput.tick(screen)
+            builderAssembleButton.tick(screen)
 
-                    elif actionPanelOut == "back":
-                        uiData.currentPage = "main"
-                        actionPanel.setPage("main")
-                        reloadWidgets()
-                        showActionPanel = not showActionPanel
-            else:
-                builderNameInput.handleEvent(event)
-                builderDescriptionInput.handleEvent(event)
-                if builderAssembleButton.handleEvent(event) == "clicked":
-                    widgetName = builderNameInput.getText()
-                    widgetDescription = builderDescriptionInput.getText()
-                    if widgetName != "" and widgetDescription != "":
-                        widgetBuilder.buildAssembly(widgetDescription, widgetName)
-                        reloadWidgets()
-                        widgets.reloadWidgets()
-                        widgetPalette.reloadHeight()
+            displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
+            displayWidget.tick(screen)
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                mouseDownStartTime = time.time()
-                mouseDownPos = event.pos
+        elif uiData.currentPage == "calendar":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-            elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                mouseDownStartTime = None
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    uiData.currentPage = "main"
 
-        if useBgColor: screen.fill(uiData.backgroundColor)
-        # builderPanel.tick(screen)
-        builderTitleBar.tick(screen)
+            screen.fill((10, 10, 10))
+            font = pygame.font.Font('resources/outfit.ttf', 80)
+            text = font.render("CALENDAR SCREEN", True, uiData.textColor)
+            screen.blit(text, (80, 80))
+
+
+
+        # Always active 
+        if mouseDownStartTime is not None:
+                elapsed = time.time() - mouseDownStartTime
+                if elapsed >= actionPanelHoldTime:
+                    if editMode: editMode = not editMode
+                    else: showActionPanel = not showActionPanel
+                    if not editMode: saveWidgetsState()
+                    mouseDownStartTime = None
+
+        if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
+        elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2
+
+        if tActionPanelOpacity < 0: tActionPanelOpacity = 0
         
-        builderNameInput.tick(screen)
-        builderDescriptionInput.tick(screen)
-        builderAssembleButton.tick(screen)
+        if tActionPanelOpacity > 0:
+            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            overlay.fill(uiTools.interpolateColors((0, 0, 0, 0),
+                                                (0, 0, 0, 200),
+                                                tActionPanelOpacity))
 
-        displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
-        displayWidget.tick(screen)
+            screen.blit(overlay, (0, 0))
+        
+        if showActionPanel: actionPanel.tick(screen)
 
-    elif uiData.currentPage == "calendar":
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                uiData.currentPage = "main"
-
-        screen.fill((10, 10, 10))
-        font = pygame.font.Font('resources/outfit.ttf', 80)
-        text = font.render("CALENDAR SCREEN", True, uiData.textColor)
-        screen.blit(text, (80, 80))
-
-
-
-    # Always active 
-    if mouseDownStartTime is not None:
-            elapsed = time.time() - mouseDownStartTime
-            if elapsed >= actionPanelHoldTime:
-                if editMode: editMode = not editMode
-                else: showActionPanel = not showActionPanel
-                if not editMode: saveWidgetsState()
-                mouseDownStartTime = None
-
-    if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
-    elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2
-
-    if tActionPanelOpacity < 0: tActionPanelOpacity = 0
-    
-    if tActionPanelOpacity > 0:
-        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        overlay.fill(uiTools.interpolateColors((0, 0, 0, 0),
-                                            (0, 0, 0, 200),
-                                            tActionPanelOpacity))
-
-        screen.blit(overlay, (0, 0))
-    
-    if showActionPanel: actionPanel.tick(screen)
-
-    pygame.display.flip()
-    clock.tick(60)
+        pygame.display.flip()
+        clock.tick(60)
