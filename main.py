@@ -135,10 +135,12 @@ if __name__ == "__main__":
 
     tActionPanelOpacity = 0
 
-    displayWidget = widgets.Clock()
+    displayWidget = widgets.DisplayWidget(width=2, height=2)
 
     bg = pygame.image.load(bgPath)
     bg = pygame.transform.scale(bg, (uiData.screenWidth, uiData.screenHeight))
+
+    jobsToDo = []
 
     while running:
         screen.blit(bg, (0, 0))
@@ -342,10 +344,16 @@ if __name__ == "__main__":
                         widgetName = builderNameInput.getText()
                         widgetDescription = builderDescriptionInput.getText()
                         if widgetName != "" and widgetDescription != "":
-                            widgetBuilder.buildAssembly(widgetDescription, widgetName)
-                            reloadWidgets()
-                            widgets.reloadWidgets()
-                            widgetPalette.reloadHeight()
+                            if "assembleWidget" not in jobsToDo:
+                                jobsToDo.append("assembleWidget")
+                            
+                            elif "assembleWidget" in jobsToDo:
+                                widgetBuilder.buildAssembly(widgetDescription, widgetName)
+                                displayWidget.setCreating(False)
+                                reloadWidgets()
+                                widgets.reloadWidgets()
+                                widgetPalette.reloadHeight()
+                                jobsToDo.remove("assembleWidget")
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouseDownStartTime = time.time()
@@ -358,11 +366,14 @@ if __name__ == "__main__":
             # builderPanel.tick(screen)
             builderTitleBar.tick(screen)
             
+            if "assembleWidget" in jobsToDo:
+                displayWidget.setCreating(True)
+
             builderNameInput.tick(screen)
             builderDescriptionInput.tick(screen)
             builderAssembleButton.tick(screen)
 
-            displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 200)
+            displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 240)
             displayWidget.tick(screen)
 
         elif uiData.currentPage == "calendar":
@@ -377,8 +388,6 @@ if __name__ == "__main__":
             font = pygame.font.Font('resources/outfit.ttf', 80)
             text = font.render("CALENDAR SCREEN", True, uiData.textColor)
             screen.blit(text, (80, 80))
-
-
 
         # Always active 
         if mouseDownStartTime is not None:

@@ -253,12 +253,12 @@ class actionPanel(CenteredPanel):
     
 class snappingTitleBar(SnappingPanel):
     def __init__(self, title):
-        super().__init__(width=16, height=1, pos=(0, 0))
+        super().__init__(width=16, height=2, pos=(0, 0))
         self.color = (0, 0, 0, 0)
         self.title = title
 
     def drawContent(self):
-        titleFont = pygame.font.Font('resources/outfit.ttf', 40)
+        titleFont = pygame.font.Font('resources/outfit.ttf', 80)
         titleSurface = titleFont.render(self.title, True, uiData.textColor)
         sw, sh = self.surface.get_size()
         tw, th = titleSurface.get_size()

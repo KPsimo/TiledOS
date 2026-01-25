@@ -223,6 +223,35 @@ class Widget:
         # To be overridden by child classes
         pass
 
+class DisplayWidget(Widget):
+    def __init__(self, width=2, height=2, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        self.rotation = 0
+        self.creating = False
+
+    def drawContent(self):
+        # draw a rotating question mark for demonstration
+        if self.creating:
+            font = pygame.font.Font('resources/outfit.ttf', 30)
+            text = font.render("Assembling...", True, uiData.textColor)
+            rotatedText = pygame.transform.rotate(text, 0)
+            textRect = rotatedText.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+            self.surface.blit(rotatedText, textRect)
+        else:
+            font = pygame.font.Font('resources/outfit.ttf', 100)
+            text = font.render("?", True, uiData.textColor)
+            rotatedText = pygame.transform.rotate(text, self.rotation)
+            textRect = rotatedText.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+            self.surface.blit(rotatedText, textRect)
+
+    def update(self):
+        self.rotation += 5
+        if self.rotation >= 360:
+            self.rotation = 0
+
+    def setCreating(self, value):
+        self.creating = value
+
 # --- Widgets --- #
 
 class Calendar(Widget):
@@ -245,7 +274,6 @@ class Calendar(Widget):
         center=(self.surface.get_width() // 2, self.surface.get_height() // 2)
         )
         self.surface.blit(text, text_rect)
-
 
 class Clock(Widget):
     preferredSizes = [(3, 1), (6, 2)]
@@ -507,4 +535,5 @@ def reloadWidgets():
     loadedWidgets = loadWidgets()
     for widget in loadedWidgets:
         addWidget(widget.name, widget)
+
 reloadWidgets()
