@@ -19,6 +19,7 @@ widgetBackgroundColorCollision = (80, 30, 30)
 primaryTransparentColor = (widgetBackgroundColor[0] + 10, widgetBackgroundColor[1] + 10, widgetBackgroundColor[2] + 10, 200)
 
 textColor = (255, 255, 255)
+fadedTextColor = (150, 150, 150)
 
 backgroundColorEditMode = (20, 20, 22)
 

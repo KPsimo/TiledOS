@@ -88,6 +88,8 @@ showGrid = False
 actionPanel = components.actionPanel()
 widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
 
+widgetPalette.setLoadedWidgets(screenWidgets)
+
 builderTitleBar = components.snappingTitleBar("Create Assembly")
 builderPanel = components.widgetBuilderPanel()
 
@@ -180,6 +182,8 @@ while running:
 
             # check edit mode events
             if True:
+                widgetPalette.setLoadedWidgets(screenWidgets)
+
                 if not widgetPalette.getRect().collidepoint(pygame.mouse.get_pos()):
                     if editMode:
                         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:

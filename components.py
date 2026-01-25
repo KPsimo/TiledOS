@@ -133,17 +133,23 @@ class widgetPallettePanel(FloatingPanel):
         self.fontTitle = pygame.font.Font('resources/outfit.ttf', 40)
         self.fontSmall = pygame.font.Font('resources/outfit.ttf', 35)
 
+        self.loadedWidgets = {}
+
     def reloadHeight(self):
         self.height = 70 + len(widgets.allWidgets) * 60 + 10
         self._updateSurface()
 
     def drawContent(self):
-        titleSurface = self.fontTitle.render("Widget Pallette", True, uiData.textColor)
-        self.surface.blit(titleSurface, (10, 10))
+        titleSurface = self.fontTitle.render(" -- Widgets -- ", True, uiData.textColor)
+        self.surface.blit(titleSurface, ((self.width - titleSurface.get_width()) // 2, 10)) # center on x
 
         for widget in widgets.allWidgets:
             widgetName = widget
-            textSurface = self.fontSmall.render(widgetName, True, uiData.textColor)
+            if (widgetName in self.loadedWidgets):
+                textSurface = self.fontSmall.render(widgetName, True, uiData.textColor)
+            else:
+                textSurface = self.fontSmall.render(widgetName, True, uiData.fadedTextColor)
+            
             self.surface.blit(textSurface, (10, 75 + list(widgets.allWidgets.keys()).index(widgetName) * 60))
 
     def handleEvent(self, event):
@@ -158,6 +164,9 @@ class widgetPallettePanel(FloatingPanel):
                     return index
 
         return None
+    
+    def setLoadedWidgets(self, loadedWidgets):
+        self.loadedWidgets = loadedWidgets
     
 class actionPanel(CenteredPanel):
     def __init__(self):
