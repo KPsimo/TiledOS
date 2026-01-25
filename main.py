@@ -9,6 +9,14 @@ import time
 import windowTools
 import widgetBuilder
 import data.uiData as uiData
+import sys
+
+if sys.platform == "win32":
+    import ctypes
+    hwnd = pygame.display.get_wm_info()["window"]
+    user32 = ctypes.windll.user32
+    SW_MINIMIZE = 6
+    SW_RESTORE = 9
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -71,10 +79,15 @@ def reloadWidgets():
     loadWidgetsState()
 
 def minimize():
-    pygame.display.iconify()
+    pygame.display.set_mode((1, 1), pygame.NOFRAME)
+    if sys.platform == "win32":
+        user32.ShowWindow(hwnd, SW_MINIMIZE)
 
 def maximize():
     pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight), pygame.FULLSCREEN)
+    if sys.platform == "win32":
+        user32.ShowWindow(hwnd, SW_RESTORE)
+        user32.SetForegroundWindow(hwnd)
 
 screenWidgets = {}
 
