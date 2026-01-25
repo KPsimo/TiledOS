@@ -1,7 +1,7 @@
 import sys
 import breakGuard
 
-if not breakGuard.checkAll():
+if not breakGuard.checkAllSecrets():
     print("Exiting due to missing files.")
     sys.exit()
 
