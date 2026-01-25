@@ -11,13 +11,6 @@ import widgetBuilder
 import data.uiData as uiData
 import sys
 
-if sys.platform == "win32":
-    import ctypes
-    hwnd = pygame.display.get_wm_info()["window"]
-    user32 = ctypes.windll.user32
-    SW_MINIMIZE = 6
-    SW_RESTORE = 9
-
 widgetsPath = os.path.join("data", "widgets.json")
 
 def addWidget(name, widget):
@@ -97,6 +90,13 @@ pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight), pygame.FULLSCREEN)
 pygame.display.set_caption("TiledOS")
+
+if sys.platform == "win32":
+    import ctypes
+    hwnd = pygame.display.get_wm_info()["window"]
+    user32 = ctypes.windll.user32
+    SW_MINIMIZE = 6
+    SW_RESTORE = 9
 
 clock = pygame.time.Clock()
 
