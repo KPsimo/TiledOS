@@ -246,7 +246,7 @@ def getWidgetCode(prompt):
     )
 
     reply = completion.choices[0].message.content
-    messages.append({"role": "agent", "content": reply})
+    messages.append({"role": "tool", "content": reply})
 
     return reply
 

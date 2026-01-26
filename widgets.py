@@ -1,4 +1,3 @@
-
 import pygame
 import time
 import data.uiData as uiData
@@ -217,7 +216,7 @@ class Widget:
             px, py = self.getActualPosition()
             sx, sy = self.getActualSize()
             if px <= mx <= px + sx and py <= my <= py + sy:
-                self.clicked(mx, my)
+                return self.clicked(mx, my)
 
     def clicked(self, mx, my):
         # To be overridden by child classes
@@ -262,12 +261,8 @@ class Calendar(Widget):
         pygame.font.init()
         self.font = pygame.font.Font('resources/outfit.ttf', 50)
 
-    def clicked(self, mx, my):
-        # Switch to calendar view/screen
-        uiData.currentPage = "calendar"
-        print("SWITCHED PAGE:", uiData.currentPage) #just checking
 
-
+    #lazy, dont do this, temporary
     def drawContent(self):
         text = self.font.render("Calendar", True, uiData.textColor)
         text_rect = text.get_rect(
@@ -494,6 +489,32 @@ class PomodoroTimer(Widget):
         timeTextRect = timeText.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() - (self.surface.get_height() // 3)))
         self.surface.blit(timeText, timeTextRect)
 
+class StickyNote(Widget):
+    preferredSizes = [(2, 2), (4, 4)]
+    def __init__(self, width=2, height=2, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        pygame.font.init()
+        self.font = pygame.font.Font('resources/outfit.ttf', 30)
+        self.note = "Click to add note."
+
+    def drawContent(self):        
+        lines = uiTools.wrapText(self.note, maxCharacters=self.width * 5)
+        lineHeight = self.font.get_height()
+        totalTextHeight = lineHeight * len(lines)
+        startY = (self.surface.get_height() - totalTextHeight) // 2
+
+        for i, line in enumerate(lines):
+            text = self.font.render(line, True, uiData.textColor)
+            textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + i * lineHeight + lineHeight // 2))
+            self.surface.blit(text, textRect)
+
+    def update(self):
+        if not self.note:
+            self.note = "Click to add note."
+
+    def clicked(self, mx, my):
+        return "editNote"
+
 # --- Import Widgets & Assemblies --- #
 
 allWidgets = {}
@@ -506,7 +527,8 @@ def reloadWidgets():
         "Calendar": Calendar(),
         "Stopwatch": Stopwatch(),
         "Date": Date(),
-        "Pomodoro Timer": PomodoroTimer()
+        "Pomodoro Timer": PomodoroTimer(),
+        "Sticky Note": StickyNote()
     }
 
     def addWidget(widgetName, widget):

@@ -195,7 +195,14 @@ if __name__ == "__main__":
                     # not edit mode events
                     if not editMode:
                         for widget in screenWidgets.values():
-                            widget.handleEvent(event)
+                            if widget != "Sticky Note":
+                                widget.handleEvent(event)
+
+                        stickyNoteOut = screenWidgets["Sticky Note"].handleEvent(event)
+                        
+                        if stickyNoteOut:
+                            newText = windowTools.getText()
+                            screenWidgets["Sticky Note"].note = newText
 
                     # edit mode events
                     if editMode:
@@ -278,7 +285,6 @@ if __name__ == "__main__":
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
                         mouseDownStartTime = None
-            # event check end
 
             if editMode and tEditModeBackgroundColor < 1: tEditModeBackgroundColor += 0.2
             elif not editMode and tEditModeBackgroundColor > 0: tEditModeBackgroundColor -= 0.2
@@ -295,8 +301,6 @@ if __name__ == "__main__":
                     (50, 50, 50, 255),
                     uiData.backgroundColor,
                     tEditModeBackgroundColor), uiData.cellSize, uiData.cellPadding, uiData.screenWidth, uiData.screenHeight)
-
-            # draw backmost layer
 
             if draggingWidget is not None: draggingWidget.setColor(uiData.widgetBackgroundColorProgression)
             elif resizingWidget is not None: resizingWidget.setColor(uiData.widgetBackgroundColorProgression)
@@ -318,9 +322,6 @@ if __name__ == "__main__":
                         5
                     )
             
-            # draw frontmost layer
-
-            # widget palette
             if editMode: widgetPalette.tick(screen)        
         
         elif uiData.currentPage == "builder":
