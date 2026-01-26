@@ -16,6 +16,7 @@ import time
 import windowTools
 import widgetBuilder
 import data.uiData as uiData
+import testAssembly
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -353,13 +354,7 @@ if __name__ == "__main__":
                             if "assembleWidget" not in jobsToDo:
                                 jobsToDo.append("assembleWidget")
                             
-                            elif "assembleWidget" in jobsToDo:
-                                widgetBuilder.buildAssembly(widgetDescription, widgetName)
-                                displayWidget.setCreating(False)
-                                reloadWidgets()
-                                widgets.reloadWidgets()
-                                widgetPalette.reloadHeight()
-                                jobsToDo.remove("assembleWidget")
+            
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouseDownStartTime = time.time()
@@ -372,6 +367,23 @@ if __name__ == "__main__":
             # builderPanel.tick(screen)
             builderTitleBar.tick(screen)
             
+            if "assembleWidget" in jobsToDo:
+                widgetBuilder.buildAssembly(widgetDescription, widgetName)
+                displayWidget.setCreating(False)
+                reloadWidgets()
+                widgets.reloadWidgets()
+                widgetPalette.reloadHeight()
+                
+                testErrors = Exception("Initial")
+
+                while testErrors:
+                    testErrors = testAssembly.runAllTests()
+
+                    if testErrors:
+                        widgetBuilder.fixAssemblyError(testErrors, widgetName)
+
+                jobsToDo.remove("assembleWidget")
+
             if "assembleWidget" in jobsToDo:
                 displayWidget.setCreating(True)
 
