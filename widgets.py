@@ -6,6 +6,9 @@ import math
 import importlib
 import os
 import sys
+import canvasEndpoint
+import pandas as pd
+import threading
 
 # --- Widget Template --- #
 
@@ -515,6 +518,77 @@ class StickyNote(Widget):
     def clicked(self, mx, my):
         return "editNote"
 
+class UpcomingAssignments(Widget):
+    assignments = pd.DataFrame()
+    
+    def fetchAssignments():
+        UpcomingAssignments.assignments = canvasEndpoint.getAllCurrentAssignments()
+        print("fetched assignments")
+    
+    threading.Thread(target=fetchAssignments).start()
+
+    preferredSizes = [(3, 2), (6, 4)]
+
+    def __init__(self, width=3, height=2, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        self.font = pygame.font.Font('resources/outfit.ttf', 30)
+        self.listFont = pygame.font.Font('resources/outfit.ttf', 28)
+
+        self.loadingArcAngle = 0
+        self.loadingArcLength = 200
+        self.loadingArcIncreasing = True
+
+    def drawContent(self):
+        if UpcomingAssignments.assignments.empty:
+            loadingRadius = min(self.surface.get_width(), self.surface.get_height()) // 6
+            loadingCenter = (self.surface.get_width() // 2, self.surface.get_height() // 2)
+            endAngle = math.radians(self.loadingArcAngle)
+            pygame.draw.arc(
+                self.surface,
+                uiData.textColor,
+                (
+                    loadingCenter[0] - loadingRadius,
+                    loadingCenter[1] - loadingRadius,
+                    loadingRadius * 2,
+                    loadingRadius * 2
+                ),
+                math.radians(self.loadingArcAngle),
+                math.radians(self.loadingArcAngle + self.loadingArcLength),
+                4
+            )
+
+            return
+        
+        else:
+            displayAssignments = UpcomingAssignments.assignments.head(int(self.height * 4))
+            font = self.listFont
+            lineHeight = font.get_height() + 5
+            startY = 10
+
+            for index, row in displayAssignments.iterrows():
+                assignmentStr = f"{row['Name']}"
+
+                if len(assignmentStr) > 7*self.width:
+                    assignmentStr = assignmentStr[:7*int(self.width)] + "..."
+
+                text = font.render(assignmentStr, True, uiData.textColor)
+                textRect = text.get_rect(topleft=(10, startY))
+                self.surface.blit(text, textRect)
+                startY += lineHeight
+
+    def update(self):
+        self.loadingArcAngle += 10
+
+        if self.loadingArcIncreasing:
+            self.loadingArcLength *= 1.1
+            if self.loadingArcLength >= 370:
+                self.loadingArcIncreasing = False
+        else:
+            self.loadingArcLength *= 0.9
+            if self.loadingArcLength <= 50:
+                self.loadingArcIncreasing = True
+
+
 # --- Import Widgets & Assemblies --- #
 
 allWidgets = {}
@@ -528,7 +602,8 @@ def reloadWidgets():
         "Stopwatch": Stopwatch(),
         "Date": Date(),
         "Pomodoro Timer": PomodoroTimer(),
-        "Sticky Note": StickyNote()
+        "Sticky Note": StickyNote(),
+        "Upcoming": UpcomingAssignments()
     }
 
     def addWidget(widgetName, widget):

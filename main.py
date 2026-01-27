@@ -198,12 +198,12 @@ if __name__ == "__main__":
                             if widget != "Sticky Note":
                                 widget.handleEvent(event)
 
-                        stickyNoteOut = screenWidgets["Sticky Note"].handleEvent(event)
-                        
-                        if stickyNoteOut:
-                            newText = windowTools.getText()
-                            screenWidgets["Sticky Note"].note = newText
+                        if "Sticky Note" in screenWidgets:
+                            stickyNoteOut = screenWidgets["Sticky Note"].handleEvent(event)
 
+                            if stickyNoteOut:
+                                newText = windowTools.getText()
+                                screenWidgets["Sticky Note"].note = newText
                     # edit mode events
                     if editMode:
                         widgetPaletteOut = widgetPalette.handleEvent(event)

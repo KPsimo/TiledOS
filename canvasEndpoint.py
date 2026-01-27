@@ -11,7 +11,13 @@ headers = {"Authorization": f"Bearer {TOKEN}"}
 assignmentDf = pd.DataFrame()
 
 def getCurrentDate():
+    return datetime.now().strftime("2026-01-01")
+
     return datetime.now().strftime("%Y-%m-%d")
+
+def getNextYearDate():
+    yearAhead = datetime.now().replace(year=datetime.now().year + 1)
+    return yearAhead.strftime("%Y-06-01")
 
 def getPreviousYearDate():
     yearAgo = datetime.now().replace(year=datetime.now().year - 1)
@@ -120,8 +126,8 @@ def getAllCurrentAssignments():
 
     for (index, row) in coursesDf.iterrows():
         courseId = row["ID"]
-        startDate = getPreviousYearDate()
-        endDate = getCurrentDate()
+        startDate = getCurrentDate()
+        endDate = getNextYearDate()
         courseAssignments = getAssignments(courseId, startDate, endDate)
         
         for (aIndex, aRow) in courseAssignments.iterrows():
