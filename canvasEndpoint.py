@@ -11,7 +11,7 @@ headers = {"Authorization": f"Bearer {TOKEN}"}
 assignmentDf = pd.DataFrame()
 
 def getCurrentDate():
-    return datetime.now().strftime("2026-01-01")
+    return datetime.now().strftime("2026-01-30")
 
     return datetime.now().strftime("%Y-%m-%d")
 

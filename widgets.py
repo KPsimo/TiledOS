@@ -44,6 +44,8 @@ class Widget:
         for size in [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]:
             self.fonts.append(pygame.font.Font('resources/outfit.ttf', size))
 
+        self.flashOverlayAlpha = 0
+
         self._updateSurface()
 
     def _updateSurface(self):
@@ -165,12 +167,34 @@ class Widget:
                 self.surface.blit(roundedOutline, (0, 0))
 
             self.drawContent()
+
             if self.posOverridden:
                 x, y = self.pos
             else:
                 x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
                 y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
             screen.blit(self.surface, (int(x), int(y)))
+
+        if self.flashOverlayAlpha > 0:
+            flashOverlay = pygame.Surface(self.surface.get_size(), pygame.SRCALPHA)
+            roundedFlashOverlay = uiTools.makeRoundedSurface(
+                flashOverlay.get_size(),
+                uiData.cornerRadius,
+                (uiData.widgetBackgroundColor[0], uiData.widgetBackgroundColor[1], uiData.widgetBackgroundColor[2], int(self.flashOverlayAlpha)),
+                outlineWidth=0
+            )
+            if self.posOverridden:
+                x, y = self.pos
+            else:
+                x = (self.pos[0] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+                y = (self.pos[1] * (uiData.cellSize + uiData.cellPadding)) + uiData.cellPadding // 2
+            screen.blit(roundedFlashOverlay, (int(x), int(y)))
+            self.flashOverlayAlpha -= 40
+            if self.flashOverlayAlpha < 0:
+                self.flashOverlayAlpha = 0
+
+    def flashTransition(self):
+        self.flashOverlayAlpha = 255
 
     def drawContent(self):
         # To be overridden by child classes
@@ -219,9 +243,21 @@ class Widget:
             px, py = self.getActualPosition()
             sx, sy = self.getActualSize()
             if px <= mx <= px + sx and py <= my <= py + sy:
-                return self.clicked(mx, my)
+                self.flashTransition()
+                return self.clicked(mx - int(px), my - int(py))
+        
+        if event.type == pygame.MOUSEMOTION:
+            mx, my = event.pos
+            px, py = self.getActualPosition()
+            sx, sy = self.getActualSize()
+            if px <= mx <= px + sx and py <= my <= py + sy:
+                return self.hovered(mx - int(px), my - int(py))
 
     def clicked(self, mx, my):
+        # To be overridden by child classes
+        pass
+
+    def hovered(self, mx, my):
         # To be overridden by child classes
         pass
 
@@ -254,7 +290,7 @@ class DisplayWidget(Widget):
     def setCreating(self, value):
         self.creating = value
 
-# --- Widgets --- #
+# --- Functional Widgets --- #
 
 class Calendar(Widget):
     preferredSizes = [(3, 1), (6, 2)]
@@ -520,61 +556,137 @@ class StickyNote(Widget):
 
 class UpcomingAssignments(Widget):
     assignments = pd.DataFrame()
-    
+    fetching = True
+
+    @staticmethod
     def fetchAssignments():
         UpcomingAssignments.assignments = canvasEndpoint.getAllCurrentAssignments()
-        print("fetched assignments")
-    
+        UpcomingAssignments.assignments = UpcomingAssignments.assignments.sort_values(by=['Due Date'])
+        UpcomingAssignments.fetching = False
+
     threading.Thread(target=fetchAssignments).start()
 
     preferredSizes = [(3, 2), (6, 4)]
 
     def __init__(self, width=3, height=2, pos=(0, 0)):
         super().__init__(width, height, pos)
-        self.font = pygame.font.Font('resources/outfit.ttf', 30)
+
+        self.titleFonts = []
+        self.subtitleFonts = []
+        self.buttonFonts = []
+
+        for size in [18, 36, 54, 72, 90, 108, 126, 144, 162, 180]:
+            self.titleFonts.append(pygame.font.Font('resources/outfit.ttf', size))
+        
+        for size in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
+            self.subtitleFonts.append(pygame.font.Font('resources/outfit.ttf', size))
+
+        for size in [9, 18, 27, 36, 45, 54, 63, 72, 81, 90]:
+            self.buttonFonts.append(pygame.font.Font('resources/outfit.ttf', size))
+
         self.listFont = pygame.font.Font('resources/outfit.ttf', 28)
 
         self.loadingArcAngle = 0
         self.loadingArcLength = 200
         self.loadingArcIncreasing = True
 
+        self.highlightedAssignment = None
+
     def drawContent(self):
         if UpcomingAssignments.assignments.empty:
-            loadingRadius = min(self.surface.get_width(), self.surface.get_height()) // 6
-            loadingCenter = (self.surface.get_width() // 2, self.surface.get_height() // 2)
-            endAngle = math.radians(self.loadingArcAngle)
-            pygame.draw.arc(
-                self.surface,
-                uiData.textColor,
-                (
-                    loadingCenter[0] - loadingRadius,
-                    loadingCenter[1] - loadingRadius,
-                    loadingRadius * 2,
-                    loadingRadius * 2
-                ),
-                math.radians(self.loadingArcAngle),
-                math.radians(self.loadingArcAngle + self.loadingArcLength),
-                4
-            )
+            if UpcomingAssignments.fetching:
+                loadingRadius = min(self.surface.get_width(), self.surface.get_height()) // 6
+                loadingCenter = (self.surface.get_width() // 2, self.surface.get_height() // 2)
+                endAngle = math.radians(self.loadingArcAngle)
+                pygame.draw.arc(
+                    self.surface,
+                    uiData.textColor,
+                    (
+                        loadingCenter[0] - loadingRadius,
+                        loadingCenter[1] - loadingRadius,
+                        loadingRadius * 2,
+                        loadingRadius * 2
+                    ),
+                    math.radians(self.loadingArcAngle),
+                    math.radians(self.loadingArcAngle + self.loadingArcLength),
+                    4
+                )
 
-            return
-        
-        else:
-            displayAssignments = UpcomingAssignments.assignments.head(int(self.height * 4))
-            font = self.listFont
-            lineHeight = font.get_height() + 5
-            startY = 10
-
-            for index, row in displayAssignments.iterrows():
-                assignmentStr = f"{row['Name']}"
-
-                if len(assignmentStr) > 7*self.width:
-                    assignmentStr = assignmentStr[:7*int(self.width)] + "..."
-
-                text = font.render(assignmentStr, True, uiData.textColor)
-                textRect = text.get_rect(topleft=(10, startY))
+                return
+            else:
+                text = self.subtitleFonts[int(self.height-1)].render("All Finished!", True, uiData.textColor)
+                textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
                 self.surface.blit(text, textRect)
+
+        else:
+            if self.highlightedAssignment is None:
+                displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * 2.5))
+                font = self.listFont
+                lineHeight = font.get_height() + 5
+                startY = (self.surface.get_height() - (lineHeight * len(displayAssignments))) // 2
+
+                for index, row in displayAssignments.iterrows():
+                    assignmentStr = f"{row['Name']}"
+
+                    if len(assignmentStr) > 7*self.width:
+                        assignmentStr = assignmentStr[:7*int(self.width)] + "..."
+
+                    dueDate = row['Due Date'][:10]
+
+                    textColor = uiData.textColor
+
+                    if (dueDate == canvasEndpoint.getCurrentDate()): pass
+                    elif (dueDate < canvasEndpoint.getCurrentDate()): textColor = (255, 100, 100)
+                    else: textColor = (150, 150, 150)
+
+                    text = font.render(assignmentStr, True, textColor)
+                    textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + lineHeight // 2))
+                    self.surface.blit(text, textRect)
+                    startY += lineHeight
+            
+            else:
+                titleFont = self.titleFonts[int(self.height-1)]
+                subtitleFont = self.subtitleFonts[int(self.height-1)]
+                lineHeight = subtitleFont.get_height() + 5
+                totalHeight = titleFont.get_height() + (lineHeight * 2)
+                startY = (self.surface.get_height() - totalHeight) // 2  # Center vertically
+
+                assignmentStr = f"{self.highlightedAssignment['Name']}"
+                dueDate = self.highlightedAssignment['Due Date'][:10]
+                points = self.highlightedAssignment['Points']
+
+                textColor = uiData.textColor
+
+                wrappedLines = uiTools.wrapText(assignmentStr, maxCharacters=self.width * 4)
+                for line in wrappedLines:
+                    nameText = titleFont.render(line, True, textColor)
+                    nameTextRect = nameText.get_rect(center=(self.surface.get_width() // 2, startY))
+                    self.surface.blit(nameText, nameTextRect)
+                    startY += lineHeight
+
+                dueDateText = subtitleFont.render(f"Due {dueDate[5:]}", True, (170, 170, 170))
+                dueDateTextRect = dueDateText.get_rect(center=(self.surface.get_width() // 2, startY))
+                self.surface.blit(dueDateText, dueDateTextRect)
                 startY += lineHeight
+
+                pointsText = subtitleFont.render(f"{int(points)} Points", True, (170, 170, 170))
+                pointsTextRect = pointsText.get_rect(center=(self.surface.get_width() // 2, startY))
+                self.surface.blit(pointsText, pointsTextRect)
+
+                buttonWidth = self.surface.get_width() - self.surface.get_width() // 4
+                buttonHeight = self.surface.get_height() // 8
+                buttonX = (self.surface.get_width() - buttonWidth) // 2
+                buttonY = self.surface.get_height() - buttonHeight - 10
+                pygame.draw.rect(
+                    self.surface,
+                    (50, 50, 50),
+                    (buttonX, buttonY, buttonWidth, buttonHeight),
+                    border_radius=buttonHeight // 4
+                )
+
+                buttonText = self.buttonFonts[int(self.height-1)].render("Remove Assignment", True, (255, 255, 255))
+                buttonTextRect = buttonText.get_rect(center=(self.surface.get_width() // 2, buttonY + buttonHeight // 2))
+                self.surface.blit(buttonText, buttonTextRect)
 
     def update(self):
         self.loadingArcAngle += 10
@@ -588,6 +700,27 @@ class UpcomingAssignments(Widget):
             if self.loadingArcLength <= 50:
                 self.loadingArcIncreasing = True
 
+    def clicked(self, mx, my):
+        if self.highlightedAssignment is None:
+            displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * 2.5))
+            lineHeight = self.listFont.get_height() + 5
+            startY = (self.surface.get_height() - (lineHeight * len(displayAssignments))) // 2
+            
+            clickIndex = (my - startY) // lineHeight
+
+            if 0 <= clickIndex < len(displayAssignments):
+                self.highlightedAssignment = UpcomingAssignments.assignments.iloc[clickIndex]
+
+        else:
+            buttonWidth = self.surface.get_width() - self.surface.get_width() // 4
+            buttonHeight = self.surface.get_height() // 8
+            buttonX = (self.surface.get_width() - buttonWidth) // 2
+            buttonY = self.surface.get_height() - buttonHeight - 10
+
+            if buttonX <= mx <= buttonX + buttonWidth and buttonY <= my <= buttonY + buttonHeight:
+                UpcomingAssignments.assignments = UpcomingAssignments.assignments.drop(self.highlightedAssignment.name)
+            
+            self.highlightedAssignment = None
 
 # --- Import Widgets & Assemblies --- #
 
