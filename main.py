@@ -50,17 +50,22 @@ def loadWidgetsState():
         pass
 
 def drawGrid(surface, color, cellSize, cellPadding, width, height):
+    """Draw grid more efficiently using pygame.draw.lines instead of individual line calls"""
+    cellSizeWithPadding = cellSize + cellPadding
+    
+    # Vertical lines
     x = 0
-    while x <= width - cellSize:
-        pygame.draw.line(surface, color, (x, 0), (x, height))
-        x += cellSize + cellPadding
-    pygame.draw.line(surface, color, (width - 1, 0), (width - 1, height))  # right edge
-
+    while x <= width:
+        pygame.draw.line(surface, color, (x, 0), (x, height), 1)
+        x += cellSizeWithPadding
+    pygame.draw.line(surface, color, (width - 1, 0), (width - 1, height), 1)
+    
+    # Horizontal lines
     y = 0
-    while y <= height - cellSize:
-        pygame.draw.line(surface, color, (0, y), (width, y))
-        y += cellSize + cellPadding
-    pygame.draw.line(surface, color, (0, height - 1), (width, height - 1))  # bottom edge
+    while y <= height:
+        pygame.draw.line(surface, color, (0, y), (width, y), 1)
+        y += cellSizeWithPadding
+    pygame.draw.line(surface, color, (0, height - 1), (width, height - 1), 1)
 
 def checkCollision(testWidget, newPos, newSize):
     testRect = pygame.Rect(newPos[0], newPos[1], newSize[0], newSize[1])
@@ -148,6 +153,10 @@ if __name__ == "__main__":
     bg = pygame.transform.scale(bg, (uiData.screenWidth, uiData.screenHeight))
 
     jobsToDo = []
+    
+    # Pre-create overlay surface for reuse
+    overlay_surface = pygame.Surface((uiData.screenWidth, uiData.screenHeight), pygame.SRCALPHA)
+    last_overlay_opacity = -1  # Track last opacity to know when to update
 
     while running:
         screen.blit(bg, (0, 0))
@@ -234,7 +243,8 @@ if __name__ == "__main__":
                                     if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
                                         and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
                                         resizingWidget = widget
-                                        resizeStartPos = (mx - uiData.cellSize, my - uiData.cellSize)
+                                        # Store initial widget dimensions and mouse position for resize calculation
+                                        resizeStartPos = (mx, my, widget.width, widget.height)
                                         break
 
                                     elif wPos[0] <= mx <= wPos[0] + wSize[0] and wPos[1] <= my <= wPos[1] + wSize[1]:
@@ -260,14 +270,24 @@ if __name__ == "__main__":
                                     if not checkCollision(draggingWidget, (newX, newY), (draggingWidget.width, draggingWidget.height)):
                                         draggingWidget.setPosition(newX, newY)
 
-                                elif resizingWidget is not None:
+                                elif resizingWidget is not None and resizeStartPos is not None:
                                     mx, my = event.pos
-                                    mx += uiData.cellSize // 2
-                                    my += uiData.cellSize // 2
-                                    wPos = resizingWidget.getActualPosition()
+                                    startMouseX, startMouseY, startWidth, startHeight = resizeStartPos
+                                    
+                                    # Calculate mouse delta in pixels
+                                    deltaX = mx - startMouseX
+                                    deltaY = my - startMouseY
+                                    
+                                    # Convert pixel delta to cell delta
                                     cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
-                                    newWidthCells = max(1, (mx - wPos[0]) // cellSizeWithPadding)
-                                    newHeightCells = max(1, (my - wPos[1]) // cellSizeWithPadding)
+                                    widthDelta = round(deltaX / cellSizeWithPadding)
+                                    heightDelta = round(deltaY / cellSizeWithPadding)
+                                    
+                                    # Calculate new dimensions (minimum 1 cell)
+                                    newWidthCells = max(1, startWidth + widthDelta)
+                                    newHeightCells = max(1, startHeight + heightDelta)
+                                    
+                                    # Check collision and update size
                                     if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
                                         resizingWidget.setSize(newWidthCells, newHeightCells)
 
@@ -423,12 +443,15 @@ if __name__ == "__main__":
         if tActionPanelOpacity < 0: tActionPanelOpacity = 0
         
         if tActionPanelOpacity > 0:
-            overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-            overlay.fill(uiTools.interpolateColors((0, 0, 0, 0),
-                                                (0, 0, 0, 200),
-                                                tActionPanelOpacity))
-
-            screen.blit(overlay, (0, 0))
+            # Only update overlay if opacity changed
+            if abs(tActionPanelOpacity - last_overlay_opacity) > 0.01:
+                overlay_surface.fill((0, 0, 0, 0))
+                overlay_surface.fill(uiTools.interpolateColors((0, 0, 0, 0),
+                                                    (0, 0, 0, 200),
+                                                    tActionPanelOpacity))
+                last_overlay_opacity = tActionPanelOpacity
+            
+            screen.blit(overlay_surface, (0, 0))
         
         if showActionPanel: actionPanel.tick(screen)
 

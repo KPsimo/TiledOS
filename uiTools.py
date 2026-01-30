@@ -1,11 +1,32 @@
 import pygame
 
+# Cache for rounded surfaces to avoid recreating them every frame
+_rounded_surface_cache = {}
+
 def makeRoundedSurface(size, radius, color, outlineWidth):
+    """Create a rounded rectangle surface. Results are cached for performance."""
+    # Create cache key from parameters
+    cache_key = (size, radius, color, outlineWidth)
+    
+    # Return cached surface if available
+    if cache_key in _rounded_surface_cache:
+        return _rounded_surface_cache[cache_key]
+    
     scale = 3
     big = pygame.Surface((size[0] * scale, size[1] * scale), pygame.SRCALPHA)
     big.fill((0,0,0,0))
     pygame.draw.rect(big, color=color, rect=big.get_rect(), border_radius=radius * scale, width=outlineWidth * scale)
-    return pygame.transform.smoothscale(big, size)
+    result = pygame.transform.smoothscale(big, size)
+    
+    # Cache the result
+    _rounded_surface_cache[cache_key] = result
+    
+    return result
+
+def clear_rounded_surface_cache():
+    """Clear the cache if needed (e.g., on resolution change)"""
+    global _rounded_surface_cache
+    _rounded_surface_cache.clear()
 
 def interpolateColors(startColor, endColor, t):
     # Clamp t to [0,1]

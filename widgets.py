@@ -232,7 +232,7 @@ class Widget:
                 self.sizeSnapped = True
 
             self.size = (nx, ny)
-            # recreate surface to match new size
+            # Always update surface during animations for smooth resizing
             self._updateSurface()
 
         self.update()
