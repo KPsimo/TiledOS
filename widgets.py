@@ -657,7 +657,7 @@ class UpcomingAssignments(Widget):
 
                 textColor = uiData.textColor
 
-                wrappedLines = uiTools.wrapText(assignmentStr, maxCharacters=self.width * 4)
+                wrappedLines = uiTools.wrapText(assignmentStr, maxCharacters=self.width * 3)
                 for line in wrappedLines:
                     nameText = titleFont.render(line, True, textColor)
                     nameTextRect = nameText.get_rect(center=(self.surface.get_width() // 2, startY))
@@ -722,6 +722,25 @@ class UpcomingAssignments(Widget):
             
             self.highlightedAssignment = None
 
+class Taskboard(Widget):
+    preferredSizes = [(4, 3), (8, 6)]
+    def __init__(self, width=4, height=3, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        pygame.font.init()
+        self.font = pygame.font.Font('resources/outfit.ttf', 40)
+        self.tasks = ["Task 1", "Task 2", "Task 3"]
+
+    def drawContent(self):
+        lines = self.tasks
+        lineHeight = self.font.get_height() + 5
+        totalTextHeight = lineHeight * len(lines)
+        startY = (self.surface.get_height() - totalTextHeight) // 2
+
+        for i, line in enumerate(lines):
+            text = self.font.render(line, True, uiData.textColor)
+            textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + i * lineHeight + lineHeight // 2))
+            self.surface.blit(text, textRect)
+
 # --- Import Widgets & Assemblies --- #
 
 allWidgets = {}
@@ -736,7 +755,8 @@ def reloadWidgets():
         "Date": Date(),
         "Pomodoro Timer": PomodoroTimer(),
         "Sticky Note": StickyNote(),
-        "Upcoming": UpcomingAssignments()
+        "Upcoming": UpcomingAssignments(),
+        "Taskboard": Taskboard()
     }
 
     def addWidget(widgetName, widget):
