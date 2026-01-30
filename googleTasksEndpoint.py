@@ -9,6 +9,8 @@ from googleapiclient.discovery import build
 # CONFIGURATION #
 # ============= #
 
+
+
 # base and data paths
 base = Path(__file__).resolve().parent
 data_dir = base / "data"
@@ -99,3 +101,13 @@ with open(TASKS_JSON_PATH, "w", encoding="utf-8") as f:
     json.dump(tasks_data, f, indent=2, ensure_ascii=False)
 
 print(f"Saved tasks to {TASKS_JSON_PATH}")
+
+def getTasksList():
+    #return a list of all task names from all task lists
+    all_tasks = []
+    for tl in tasks_data:
+        for t in tl["tasks"]:
+            all_tasks.append(t["title"])
+    return all_tasks
+
+print(getTasksList())

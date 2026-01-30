@@ -1,4 +1,6 @@
 __pycache__/
 data/widgets.json
 data/keys.py
+data/credentials.json
+data/token.json
 shell.py
