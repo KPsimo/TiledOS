@@ -726,20 +726,60 @@ class Taskboard(Widget):
     preferredSizes = [(4, 3), (8, 6)]
     def __init__(self, width=4, height=3, pos=(0, 0)):
         super().__init__(width, height, pos)
-        pygame.font.init()
-        self.font = pygame.font.Font('resources/outfit.ttf', 40)
-        self.tasks = ["Task 1", "Task 2", "Task 3"]
+
+        self.subtitleFonts = []
+
+        for size in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
+            self.subtitleFonts.append(pygame.font.Font('resources/outfit.ttf', size))
+
+        self.font = pygame.font.Font('resources/outfit.ttf', 28)
+        
+        self.tasksToDo = ["DeltaMath Homework", "Read Chapter 5", "Grocery Shopping", "Workout Session", "Call Mom", "Finish Project Report", "Plan Weekend Trip", "Clean Room", "Pay Bills", "Organize Desk", "Walk the Dog", "Prepare Presentation"]
+        self.tasksCompleted = []
 
     def drawContent(self):
-        lines = self.tasks
-        lineHeight = self.font.get_height() + 5
-        totalTextHeight = lineHeight * len(lines)
-        startY = (self.surface.get_height() - totalTextHeight) // 2
+        if len(self.tasksToDo) == 0 and len(self.tasksCompleted) == 0:
+                text = self.subtitleFonts[int(self.height)-1].render("No Tasks", True, uiData.textColor)
+                textRect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
+                self.surface.blit(text, textRect)
+                return
+        else:
+            todoLines = self.tasksToDo
+            doneLines = self.tasksCompleted
 
-        for i, line in enumerate(lines):
-            text = self.font.render(line, True, uiData.textColor)
-            textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + i * lineHeight + lineHeight // 2))
-            self.surface.blit(text, textRect)
+            lineHeight = self.font.get_height() + 5
+            lotalLines = len(todoLines) + len(doneLines)
+            startY = (self.surface.get_height() - (lineHeight * lotalLines)) // 2
+
+            for i, line in enumerate(todoLines):
+                text = self.font.render(line, True, uiData.textColor)
+                textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + i * lineHeight + lineHeight // 2))
+                self.surface.blit(text, textRect)
+
+            fadedColor = (150, 150, 150)
+            for j, line in enumerate(doneLines):
+                idx = len(todoLines) + j
+                text = self.font.render(line, True, fadedColor)
+                textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + idx * lineHeight + lineHeight // 2))
+                self.surface.blit(text, textRect)
+
+                lineY = textRect.centery
+                thickness = max(1, self.font.get_height() // 12)
+                pygame.draw.line(self.surface, fadedColor, (textRect.left, lineY), (textRect.right, lineY), thickness)
+
+    def clicked(self, mx, my):
+        lineHeight = self.font.get_height() + 5
+        lotalLines = len(self.tasksToDo) + len(self.tasksCompleted)
+        startY = (self.surface.get_height() - (lineHeight * lotalLines)) // 2
+
+        clickIndex = (my - startY) // lineHeight
+
+        if 0 <= clickIndex < len(self.tasksToDo):
+            task = self.tasksToDo.pop(clickIndex)
+            self.tasksCompleted.append(task)
+        elif len(self.tasksToDo) <= clickIndex < lotalLines:
+            task = self.tasksCompleted.pop(clickIndex - len(self.tasksToDo))
+            self.tasksToDo.append(task)
 
 # --- Import Widgets & Assemblies --- #
 
