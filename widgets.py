@@ -7,6 +7,7 @@ import importlib
 import os
 import sys
 import canvasEndpoint
+import googleTasksEndpoint
 import pandas as pd
 import threading
 
@@ -557,6 +558,7 @@ class StickyNote(Widget):
 class UpcomingAssignments(Widget):
     assignments = pd.DataFrame()
     fetching = True
+    completed = set()
 
     @staticmethod
     def fetchAssignments():
@@ -634,14 +636,23 @@ class UpcomingAssignments(Widget):
                     dueDate = row['Due Date'][:10]
 
                     textColor = uiData.textColor
+                    isCompleted = index in UpcomingAssignments.completed
 
-                    if (dueDate == canvasEndpoint.getCurrentDate()): pass
+                    if isCompleted:
+                        textColor = (150, 150, 150)
+                    elif (dueDate == canvasEndpoint.getCurrentDate()): pass
                     elif (dueDate < canvasEndpoint.getCurrentDate()): textColor = (255, 100, 100)
                     else: textColor = (150, 150, 150)
 
                     text = font.render(assignmentStr, True, textColor)
                     textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + lineHeight // 2))
                     self.surface.blit(text, textRect)
+                    
+                    if isCompleted:
+                        lineY = textRect.centery
+                        thickness = max(1, font.get_height() // 12)
+                        pygame.draw.line(self.surface, textColor, (textRect.left, lineY), (textRect.right, lineY), thickness)
+                    
                     startY += lineHeight
             
             else:
@@ -649,7 +660,7 @@ class UpcomingAssignments(Widget):
                 subtitleFont = self.subtitleFonts[int(self.height-1)]
                 lineHeight = subtitleFont.get_height() + 5
                 totalHeight = titleFont.get_height() + (lineHeight * 2)
-                startY = (self.surface.get_height() - totalHeight) // 2  # Center vertically
+                startY = (self.surface.get_height() - totalHeight) // 2
 
                 assignmentStr = f"{self.highlightedAssignment['Name']}"
                 dueDate = self.highlightedAssignment['Due Date'][:10]
@@ -684,7 +695,7 @@ class UpcomingAssignments(Widget):
                     border_radius=buttonHeight // 4
                 )
 
-                buttonText = self.buttonFonts[int(self.height-1)].render("Remove Assignment", True, (255, 255, 255))
+                buttonText = self.buttonFonts[int(self.height-1)].render("Complete", True, (255, 255, 255))
                 buttonTextRect = buttonText.get_rect(center=(self.surface.get_width() // 2, buttonY + buttonHeight // 2))
                 self.surface.blit(buttonText, buttonTextRect)
 
@@ -718,7 +729,7 @@ class UpcomingAssignments(Widget):
             buttonY = self.surface.get_height() - buttonHeight - 10
 
             if buttonX <= mx <= buttonX + buttonWidth and buttonY <= my <= buttonY + buttonHeight:
-                UpcomingAssignments.assignments = UpcomingAssignments.assignments.drop(self.highlightedAssignment.name)
+                UpcomingAssignments.completed.add(self.highlightedAssignment.name)
             
             self.highlightedAssignment = None
 
@@ -734,7 +745,7 @@ class Taskboard(Widget):
 
         self.font = pygame.font.Font('resources/outfit.ttf', 28)
         
-        self.tasksToDo = ["DeltaMath Homework", "Read Chapter 5", "Grocery Shopping", "Workout Session", "Call Mom", "Finish Project Report", "Plan Weekend Trip", "Clean Room", "Pay Bills", "Organize Desk", "Walk the Dog", "Prepare Presentation"]
+        self.tasksToDo = googleTasksEndpoint.getTasksList()
         self.tasksCompleted = []
 
     def drawContent(self):
