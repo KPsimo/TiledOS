@@ -19,6 +19,7 @@ import testAssembly
 import googleCalendarEndpoint
 import threading
 import calendar as pycal
+import datetime as dt
 from datetime import date
 
 
@@ -168,6 +169,7 @@ if __name__ == "__main__":
     last_overlay_opacity = -1  # Track last opacity to know when to update
 
     while running:
+        # Always draw the same background image for ALL pages (main + calendar + builder)
         screen.blit(bg, (0, 0))
 
         if uiData.currentPage == "main":
@@ -252,7 +254,7 @@ if __name__ == "__main__":
                                     if (bottomRight[0] - resizeHandleSize <= mx <= bottomRight[0]
                                         and bottomRight[1] - resizeHandleSize <= my <= bottomRight[1]):
                                         resizingWidget = widget
-                                        # Store initial widget dimensions and mouse position for resize calculation
+                                        # Store initial widget dimensions and mouse position to resize calculation
                                         resizeStartPos = (mx, my, widget.width, widget.height)
                                         break
 
@@ -283,11 +285,11 @@ if __name__ == "__main__":
                                     mx, my = event.pos
                                     startMouseX, startMouseY, startWidth, startHeight = resizeStartPos
                                     
-                                    # Calculate mouse delta in pixels
+                                    # mouse delta in pixels
                                     deltaX = mx - startMouseX
                                     deltaY = my - startMouseY
                                     
-                                    # Convert pixel delta to cell delta
+                                    # Convert pixel delta -> cell delta
                                     cellSizeWithPadding = uiData.cellSize + uiData.cellPadding
                                     widthDelta = round(deltaX / cellSizeWithPadding)
                                     heightDelta = round(deltaY / cellSizeWithPadding)
@@ -296,7 +298,7 @@ if __name__ == "__main__":
                                     newWidthCells = max(1, startWidth + widthDelta)
                                     newHeightCells = max(1, startHeight + heightDelta)
                                     
-                                    # Check collision and update size
+                                    # Check collision + update size
                                     if not checkCollision(resizingWidget, (resizingWidget.pos[0], resizingWidget.pos[1]), (newWidthCells, newHeightCells)):
                                         resizingWidget.setSize(newWidthCells, newHeightCells)
 
@@ -430,6 +432,9 @@ if __name__ == "__main__":
             showActionPanel = False
             mouseDownStartTime = None
 
+            # Responsive layout
+            W, H = uiData.screenWidth, uiData.screenHeight
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -451,11 +456,27 @@ if __name__ == "__main__":
                             uiData.cal_month = 1
                             uiData.cal_year += 1
 
-            screen.fill((10, 10, 10))
+                # Month navigation by clicking on both sides
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mx, my = event.pos
 
-            # ---------- Responsive layout ----------
-            W, H = uiData.screenWidth, uiData.screenHeight
+                    # left 15% of screen = previous month, right 15% = next month
+                    if mx < W * 0.15:
+                        uiData.cal_month -= 1
+                        if uiData.cal_month < 1:
+                            uiData.cal_month = 12
+                            uiData.cal_year -= 1
 
+                    elif mx > W * 0.85:
+                        uiData.cal_month += 1
+                        if uiData.cal_month > 12:
+                            uiData.cal_month = 1
+                            uiData.cal_year += 1
+
+            # !!! Don't screen.fill() here
+            # screen.fill((10, 10, 10))
+
+            # Responsive layout
             margin_x = max(16, int(W * 0.02))   # ~2% of width
             margin_bottom = max(16, int(H * 0.02))
 
@@ -499,33 +520,113 @@ if __name__ == "__main__":
                 wd_surf = day_font.render(wd, True, uiData.textColor)
                 screen.blit(wd_surf, (grid_x + i * cell_w + 10, weekday_y))
 
-            # Calendar matrix (Monday start)
+            # Calendar matrix with spillover dates (Monday start)
             cal = pycal.Calendar(firstweekday=0)  # Monday
-            month_days = cal.monthdayscalendar(uiData.cal_year, uiData.cal_month)
+            month_days = cal.monthdatescalendar(uiData.cal_year, uiData.cal_month)  # real dates incl prev/next month
+
+            # Force EXACTLY 6 rows so the calendar size never changes
             while len(month_days) < 6:
-                month_days.append([0, 0, 0, 0, 0, 0, 0])
+                last_day = month_days[-1][-1]  # last date in current grid
+                next_week = [last_day + dt.timedelta(days=i) for i in range(1, 8)]
+                month_days.append(next_week)
+            month_days = month_days[:6]
 
             pad = max(2, min(8, int(min(cell_w, cell_h) * 0.06)))  # scales with cell size
 
             for row, week in enumerate(month_days):
-                for col, day_num in enumerate(week):
+                for col, day in enumerate(week):
                     x = grid_x + col * cell_w
                     y = grid_top + row * cell_h
 
+                    in_current_month = (day.month == uiData.cal_month)
+
+                    # remi-transparent cell cards (spillover more transparent) 
+                    alpha = 240 if in_current_month else 190  # tweak: current 130-160, spillover 60-100
+
+                    card_w = cell_w - pad * 2
+                    card_h = cell_h - pad * 2
+
+                    cell_surface = pygame.Surface((card_w, card_h), pygame.SRCALPHA)
+                    # rounded corners + alpha
                     pygame.draw.rect(
-                        screen,
-                        (50, 50, 50),
-                        (x + pad, y + pad, cell_w - pad * 2, cell_h - pad * 2),
+                        cell_surface,
+                        (50, 50, 50, alpha),
+                        (0, 0, card_w, card_h),
                         border_radius=10
                     )
+                    screen.blit(cell_surface, (x + pad, y + pad))
 
-                    if day_num != 0:
-                        num_surf = num_font.render(str(day_num), True, uiData.textColor)
-                        screen.blit(num_surf, (x + pad + 6, y + pad + 6))
+                    # text labels 
+                    if in_current_month:
+                        text_color = uiData.textColor
+                        label = str(day.day)
+                    else:
+                        text_color = (160, 160, 160)
+                        # show "Aug 1" / "Sep 1" on month boundary like your screenshot
+                        if day.day == 1:
+                            label = f"{day.strftime('%b')} {day.day}"
+                        else:
+                            label = str(day.day)
+
+                    num_surf = num_font.render(label, True, text_color)
+                    screen.blit(num_surf, (x + pad + 6, y + pad + 6))
+
+                # --- Simple white chevron navigation arrows (inside grid, not on cells) ---
+                hint_surface = pygame.Surface((W, H), pygame.SRCALPHA)
+
+                # Vertically center on the grid
+                arrow_cy = grid_top + (rows * cell_h) // 2
+
+                # Chevron sizing
+                arrow_size = max(18, int(min(W, H) * 0.018))
+                arrow_thickness = 6
+
+                # Solid white
+                arrow_color = (255, 255, 255, 255)
+
+                # Grid bounds
+                grid_left  = grid_x
+                grid_right = grid_x + (cols * cell_w)
+
+                # Card bounds (cards inset by pad)
+                first_card_left = grid_left + pad
+                last_card_right = grid_right - pad
+
+                # Place arrows in the gutter between grid edge and cards
+                left_x = grid_left + (first_card_left - grid_left) * 1 // 4
+                right_x = grid_right - (grid_right - last_card_right) * 1 // 4
+
+                # LEFT chevron  <
+                pygame.draw.lines(
+                    hint_surface,
+                    arrow_color,
+                    False,
+                    [
+                        (left_x + arrow_size // 2, arrow_cy - arrow_size // 2),
+                        (left_x - arrow_size // 2, arrow_cy),
+                        (left_x + arrow_size // 2, arrow_cy + arrow_size // 2),
+                    ],
+                    arrow_thickness
+                )
+
+                # RIGHT chevron  >
+                pygame.draw.lines(
+                    hint_surface,
+                    arrow_color,
+                    False,
+                    [
+                        (right_x - arrow_size // 2, arrow_cy - arrow_size // 2),
+                        (right_x + arrow_size // 2, arrow_cy),
+                        (right_x - arrow_size // 2, arrow_cy + arrow_size // 2),
+                    ],
+                    arrow_thickness
+                )
+
+                screen.blit(hint_surface, (0, 0))
 
                 # end calendar page
 
-        # Always active 
+        # always active 
         if uiData.currentPage == "main": 
             if mouseDownStartTime is not None:
                 elapsed = time.time() - mouseDownStartTime
@@ -544,7 +645,7 @@ if __name__ == "__main__":
         if tActionPanelOpacity < 0: tActionPanelOpacity = 0
         
         if tActionPanelOpacity > 0:
-            # Only update overlay if opacity changed
+            # only update overlay if opacity changed
             if abs(tActionPanelOpacity - last_overlay_opacity) > 0.01:
                 overlay_surface.fill((0, 0, 0, 0))
                 overlay_surface.fill(uiTools.interpolateColors((0, 0, 0, 0),
