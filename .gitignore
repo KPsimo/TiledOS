@@ -2,5 +2,8 @@ __pycache__/
 data/widgets.json
 data/keys.py
 data/credentials.json
+data/tokens.json
 data/token.json
 shell.py
+.venv/
+.env

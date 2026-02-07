@@ -28,7 +28,11 @@ TOKEN_PATH = data_dir / "token.json"
 TASKS_JSON_PATH = base / "tasks.json"
 
 # Google Tasks API scope
-SCOPES = ["https://www.googleapis.com/auth/tasks"] #used to be readonly but changed cuz we want to edit
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar.readonly",
+    "https://www.googleapis.com/auth/tasks",
+]
+ #tasks used to be readonly but changed to edit
 
 # ============================================================
 # AUTHENTICATION (Google)

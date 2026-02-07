@@ -8,7 +8,6 @@ if not breakGuard.checkAllSecrets():
 import pygame
 import json
 import os
-import data.uiData as uiData
 import uiTools
 import widgets
 import components
@@ -17,6 +16,11 @@ import windowTools
 import widgetBuilder
 import data.uiData as uiData
 import testAssembly
+import googleCalendarEndpoint
+import threading
+import calendar as pycal
+from datetime import date
+
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -46,8 +50,9 @@ def loadWidgetsState():
                 widget.setPosition(state["pos"][0], state["pos"][1])
                 widget.setSize(state["width"], state["height"])
                 addWidget(name, widget)
-    except:
-        pass
+    #loaded before widgets.allWidgets
+    except Exception as e:
+        print(f"Error loading widgets state: {e}")
 
 def drawGrid(surface, color, cellSize, cellPadding, width, height):
     """Draw grid more efficiently using pygame.draw.lines instead of individual line calls"""
@@ -116,6 +121,10 @@ if __name__ == "__main__":
     bgPath = os.path.join("resources", "backgrounds", "default-dark.jpg")
     useBgColor = False
     showGrid = False
+    today = date.today()
+    uiData.cal_year = today.year
+    uiData.cal_month = today.month
+
 
     actionPanel = components.actionPanel()
     widgetPalette = components.widgetPallettePanel(300, 200, (100, 100))
@@ -203,8 +212,8 @@ if __name__ == "__main__":
 
                     # not edit mode events
                     if not editMode:
-                        for widget in screenWidgets.values():
-                            if widget != "Sticky Note":
+                        for name, widget in screenWidgets.items():
+                            if name != "Sticky Note":
                                 widget.handleEvent(event)
 
                         if "Sticky Note" in screenWidgets:
@@ -414,28 +423,120 @@ if __name__ == "__main__":
 
             displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 240)
             displayWidget.tick(screen)
-
+        
         elif uiData.currentPage == "calendar":
+            # BAN edits in calendar page
+            editMode = False
+            showActionPanel = False
+            mouseDownStartTime = None
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    uiData.currentPage = "main"
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        uiData.currentPage = "main"
+
+                    # Month navigation
+                    elif event.key == pygame.K_LEFT:
+                        uiData.cal_month -= 1
+                        if uiData.cal_month < 1:
+                            uiData.cal_month = 12
+                            uiData.cal_year -= 1
+
+                    elif event.key == pygame.K_RIGHT:
+                        uiData.cal_month += 1
+                        if uiData.cal_month > 12:
+                            uiData.cal_month = 1
+                            uiData.cal_year += 1
 
             screen.fill((10, 10, 10))
-            font = pygame.font.Font('resources/outfit.ttf', 80)
-            text = font.render("CALENDAR SCREEN", True, uiData.textColor)
-            screen.blit(text, (80, 80))
+
+            # ---------- Responsive layout ----------
+            W, H = uiData.screenWidth, uiData.screenHeight
+
+            margin_x = max(16, int(W * 0.02))   # ~2% of width
+            margin_bottom = max(16, int(H * 0.02))
+
+            title_font = pygame.font.Font("resources/outfit.ttf", max(34, int(H * 0.06)))
+            day_font   = pygame.font.Font("resources/outfit.ttf", max(18, int(H * 0.028)))
+            num_font   = pygame.font.Font("resources/outfit.ttf", max(16, int(H * 0.026)))
+
+            # Title (top-left)
+            month_name = pycal.month_name[uiData.cal_month]
+            title_surf = title_font.render(f"{month_name} {uiData.cal_year}", True, uiData.textColor)
+            title_x = margin_x
+            title_y = max(8, int(H * 0.01))
+            screen.blit(title_surf, (title_x, title_y))
+
+            # Reserve header space so nothing overlaps
+            title_h = title_surf.get_height()
+            header_gap = max(10, int(H * 0.01))
+            weekday_h = day_font.get_height()
+
+            grid_top = title_y + title_h + header_gap + weekday_h + 8
+
+            # Grid area is the rest of the screen
+            grid_right = W - margin_x
+            grid_bottom = H - margin_bottom
+            grid_w = grid_right - margin_x
+            grid_h = grid_bottom - grid_top
+
+            cols, rows = 7, 6
+            cell_w = grid_w // cols
+            cell_h = grid_h // rows
+
+            # Recompute exact grid size and center it horizontally to avoid right clipping
+            actual_grid_w = cell_w * cols
+            grid_x = (W - actual_grid_w) // 2
+            grid_x = max(0, grid_x)
+
+            # Weekday headers (Monday start)
+            weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            weekday_y = grid_top - weekday_h - 6
+            for i, wd in enumerate(weekdays):
+                wd_surf = day_font.render(wd, True, uiData.textColor)
+                screen.blit(wd_surf, (grid_x + i * cell_w + 10, weekday_y))
+
+            # Calendar matrix (Monday start)
+            cal = pycal.Calendar(firstweekday=0)  # Monday
+            month_days = cal.monthdayscalendar(uiData.cal_year, uiData.cal_month)
+            while len(month_days) < 6:
+                month_days.append([0, 0, 0, 0, 0, 0, 0])
+
+            pad = max(2, min(8, int(min(cell_w, cell_h) * 0.06)))  # scales with cell size
+
+            for row, week in enumerate(month_days):
+                for col, day_num in enumerate(week):
+                    x = grid_x + col * cell_w
+                    y = grid_top + row * cell_h
+
+                    pygame.draw.rect(
+                        screen,
+                        (50, 50, 50),
+                        (x + pad, y + pad, cell_w - pad * 2, cell_h - pad * 2),
+                        border_radius=10
+                    )
+
+                    if day_num != 0:
+                        num_surf = num_font.render(str(day_num), True, uiData.textColor)
+                        screen.blit(num_surf, (x + pad + 6, y + pad + 6))
+
+                # end calendar page
 
         # Always active 
-        if mouseDownStartTime is not None:
+        if uiData.currentPage == "main": 
+            if mouseDownStartTime is not None:
                 elapsed = time.time() - mouseDownStartTime
                 if elapsed >= actionPanelHoldTime:
                     if editMode: editMode = not editMode
                     else: showActionPanel = not showActionPanel
                     if not editMode: saveWidgetsState()
                     mouseDownStartTime = None
+        else:
+            showActionPanel = False
+            mouseDownStartTime = None
 
         if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
         elif not showActionPanel and tActionPanelOpacity > 0: tActionPanelOpacity -= 0.2

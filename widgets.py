@@ -77,7 +77,7 @@ class Widget:
         return (int(self.pos[0]), int(self.pos[1]))
 
     def setSize(self, width, height):
-        if not Widget.freeSize:
+        if not self.freeSize:
             best = min(
             self.preferredSizes,
             key=lambda s: abs(s[0] - width) + abs(s[1] - height)
@@ -301,14 +301,14 @@ class Calendar(Widget):
         pygame.font.init()
         self.font = pygame.font.Font('resources/outfit.ttf', 50)
 
-
-    #lazy, dont do this, temporary
     def drawContent(self):
         text = self.font.render("Calendar", True, uiData.textColor)
-        text_rect = text.get_rect(
-        center=(self.surface.get_width() // 2, self.surface.get_height() // 2)
-        )
+        text_rect = text.get_rect(center=(self.surface.get_width() // 2, self.surface.get_height() // 2))
         self.surface.blit(text, text_rect)
+
+    def clicked(self, mx, my):
+        uiData.currentPage = "calendar"
+        return "openCalendar"
 
 class Clock(Widget):
     preferredSizes = [(3, 1), (6, 2)]
@@ -566,7 +566,7 @@ class UpcomingAssignments(Widget):
         UpcomingAssignments.assignments = UpcomingAssignments.assignments.sort_values(by=['Due Date'])
         UpcomingAssignments.fetching = False
 
-    threading.Thread(target=fetchAssignments).start()
+    threading.Thread(target=fetchAssignments, daemon=True).start()
 
     preferredSizes = [(3, 2), (6, 4)]
 
