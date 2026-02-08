@@ -25,16 +25,7 @@ import windowTools
 import widgetBuilder
 import data.uiData as uiData
 import testAssembly
-<<<<<<< HEAD
-import googleCalendarEndpoint
 import threading
-import calendar as pycal
-import datetime as dt
-from datetime import date
-import subprocess
-=======
-import threading
->>>>>>> f18ae50 (moved widget assembly to thread)
 
 widgetsPath = os.path.join("data", "widgets.json")
 
