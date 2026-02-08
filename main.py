@@ -105,7 +105,8 @@ loadWidgetsState()
 
 pygame.init()
 pygame.font.init()
-screen = pygame.display.set_mode((uiData.screenWidth, uiData.screenHeight), pygame.FULLSCREEN)
+actualScreen = pygame.display.set_mode((1366, 768))
+screen = pygame.Surface((uiData.screenWidth, uiData.screenHeight))
 pygame.display.set_caption("TiledOS")
 
 if sys.platform == "win32":
@@ -556,5 +557,7 @@ if __name__ == "__main__":
         
         if showActionPanel: actionPanel.tick(screen)
 
+        scaled = pygame.transform.smoothscale(screen, actualScreen.get_size())
+        actualScreen.blit(scaled, (0, 0))
         pygame.display.flip()
         clock.tick(60)

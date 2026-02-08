@@ -246,17 +246,17 @@ def getWidgetCode(prompt):
     )
 
     reply = completion.choices[0].message.content
-    messages.append({"role": "tool", "content": reply})
+    messages.append({"role": "agent", "content": reply})
 
     return reply
 
 def buildAssembly(requestedWidget, assemblyName):
-    prompt = f"Create a Python class that defines a widget with the requested description '{requestedWidget}' for TiledOS. The class should be named '{assemblyName.replace(" ", "")}', with the static name {assemblyName} and inherit from the Widget class provided. Ensure that preferred sizes are set. Ensure the widget has useful functionality and a visually appealing design. Import modules as needed."
+    prompt = f"Create a Python class that defines a widget with the requested description \'{requestedWidget}\' for TiledOS. The class should be named \'{assemblyName.replace(' ', '')}\', with the static name {assemblyName} and inherit from the Widget class provided. Ensure that preferred sizes are set. Ensure the widget has useful functionality and a visually appealing design. Import modules as needed."
 
     assemblyCode = getWidgetCode(prompt)
     
     # add a python file with the generated code to the assemblies directory
-    with open(f"assemblies/{assemblyName.replace(" ", "")}.py", "w") as f:
+    with open(f"assemblies/{assemblyName.replace(' ', '')}.py", "w") as f:
         f.write(f'''
 from widgets import *
 import data.uiData as uiData
@@ -269,11 +269,12 @@ WIDGET_CLASS = {assemblyName.replace(" ", "")}
 def modifyAssembly(modificationRequest, assemblyName):
     with open(f"assemblies/{assemblyName.replace(' ', '')}.py", "r") as f:
         assemblyCode = f.read()
-    prompt = f"Modify the existing widget class '{assemblyName.replace(' ', '')}' for TiledOS with the following request: '{modificationRequest}'. Ensure the widget retains its original functionality while incorporating the requested changes. Here is the existing code for reference:\n\n{assemblyCode}\n\nProvide the complete modified class definition only."
+    prompt = f"Modify the existing widget class \'{assemblyName.replace(' ', '')}\' for TiledOS with the following request: \'{modificationRequest}\'. Ensure the widget retains its original functionality while incorporating the requested changes. Here is the existing code for reference:\n\n{assemblyCode}\n\nProvide the complete modified class definition only."
 
     assemblyCode = getWidgetCode(prompt)
-
-    with open(f"assemblies/{assemblyName.replace(" ", "")}.py", "w") as f:
+    
+    # overwrite the python file with the modified code in the assemblies directory
+    with open(f"assemblies/{assemblyName.replace(' ', '')}.py", "w") as f:
         f.write(f'''
 from widgets import *
 import data.uiData as uiData
@@ -283,19 +284,8 @@ import data.uiData as uiData
 WIDGET_CLASS = {assemblyName.replace(" ", "")}
 ''')
         
-def fixAssemblyError(errorMessage, assemblyName):
-    with open(f"assemblies/{assemblyName.replace(' ', '')}.py", "r") as f:
-        assemblyCode = f.read()
-    prompt = f"The following error was encountered when trying to use the widget class '{assemblyName.replace(' ', '')}' for TiledOS: '{errorMessage}'. Please fix the code to resolve the error while retaining the original functionality. Here is the existing code for reference:\n\n{assemblyCode}\n\nProvide the complete modified class definition only."
-
-    assemblyCode = getWidgetCode(prompt)
-    
-    with open(f"assemblies/{assemblyName.replace(" ", "")}.py", "w") as f:
-        f.write(f'''
-from widgets import *
-import data.uiData as uiData
-                
-{assemblyCode}
-
-WIDGET_CLASS = {assemblyName.replace(" ", "")}
-''')
+if __name__ == "__main__":
+    name = input("Enter the name of the widget you want to create: ")
+    description = input("Enter a brief description of the widget's functionality: ")
+    print("Building assembly...")
+    buildAssembly(description, name)

@@ -1,7 +1,7 @@
 currentPage = "main"
 
-screenWidth = 1920
-screenHeight = 1080
+screenWidth = 1366
+screenHeight = 768
 
 quickScale = 1
 

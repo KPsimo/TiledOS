@@ -9,8 +9,6 @@ from googleapiclient.discovery import build
 # CONFIGURATION #
 # ============= #
 
-
-
 # base and data paths
 base = Path(__file__).resolve().parent
 data_dir = base / "data"
