@@ -3,7 +3,7 @@ currentPage = "main"
 screenWidth = 1366
 screenHeight = 768
 
-quickScale = 1
+quickScale = 0.75
 
 cellSize = 110 * quickScale
 cellPadding = 10 * quickScale

@@ -1,5 +1,14 @@
 import sys
 import breakGuard
+import argparse
+
+parser = argparse.ArgumentParser(description="Tiled")
+
+parser.add_argument("--user", type=str, default="dev", help="use \'client\' as a user, \'dev\' as a developer")
+
+args = parser.parse_args()
+
+if args.user == "dev": print("Running as developer")
 
 if not breakGuard.checkAllSecrets():
     print("Exiting due to missing files.")
@@ -21,7 +30,6 @@ import threading
 import calendar as pycal
 import datetime as dt
 from datetime import date
-
 
 widgetsPath = os.path.join("data", "widgets.json")
 
