@@ -25,12 +25,16 @@ import windowTools
 import widgetBuilder
 import data.uiData as uiData
 import testAssembly
+<<<<<<< HEAD
 import googleCalendarEndpoint
 import threading
 import calendar as pycal
 import datetime as dt
 from datetime import date
 import subprocess
+=======
+import threading
+>>>>>>> f18ae50 (moved widget assembly to thread)
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -97,6 +101,22 @@ def reloadWidgets():
     global screenWidgets
     screenWidgets = {}
     loadWidgetsState()
+
+def assembleWidgetThread(widgetDescription, widgetName):
+    """Run widget assembly in a separate thread"""
+    widgetBuilder.buildAssembly(widgetDescription, widgetName)
+    displayWidget.setCreating(False)
+    reloadWidgets()
+    widgets.reloadWidgets()
+    widgetPalette.reloadHeight()
+    
+    testErrors = Exception("Initial")
+    tries = 0
+    while testErrors and tries < 3:
+        testErrors = testAssembly.runAllTests()
+        if testErrors:
+            widgetBuilder.fixAssemblyError(testErrors, widgetName)
+            tries += 1
 
 def minimize():
     pygame.display.set_mode((1, 1), pygame.NOFRAME)
@@ -395,6 +415,7 @@ if __name__ == "__main__":
                         widgetDescription = builderDescriptionInput.getText()
                         if widgetName != "" and widgetDescription != "":
                             if "assembleWidget" not in jobsToDo:
+                                print("append")
                                 jobsToDo.append("assembleWidget")
                             
             
@@ -411,24 +432,15 @@ if __name__ == "__main__":
             builderTitleBar.tick(screen)
             
             if "assembleWidget" in jobsToDo:
-                widgetBuilder.buildAssembly(widgetDescription, widgetName)
-                displayWidget.setCreating(False)
-                reloadWidgets()
-                widgets.reloadWidgets()
-                widgetPalette.reloadHeight()
-                
-                testErrors = Exception("Initial")
-
-                while testErrors:
-                    testErrors = testAssembly.runAllTests()
-
-                    if testErrors:
-                        widgetBuilder.fixAssemblyError(testErrors, widgetName)
-
-                jobsToDo.remove("assembleWidget")
-
-            if "assembleWidget" in jobsToDo:
+                print("found assemble job")
                 displayWidget.setCreating(True)
+                assembly_thread = threading.Thread(
+                    target=assembleWidgetThread, 
+                    args=(widgetDescription, widgetName),
+                    daemon=True
+                )
+                assembly_thread.start()
+                jobsToDo.remove("assembleWidget")
 
             builderNameInput.tick(screen)
             builderDescriptionInput.tick(screen)

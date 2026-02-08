@@ -25,16 +25,6 @@ if True:
     - Ensure the class inherits from the provided Widget class.
     - Use only standard Python libraries and Pygame.
     - Absolutely do not include any special formatting or LaTeX, just raw, plaintext Python code.
-    - DO NOT OVERRIDE THESE METHODS
-        - draw(self, screen)
-        - setSize(self, width, height)
-        - setPosition(self, x, y)
-        - getSize(self)
-        - getPos(self)
-        - getActualSize(self)
-        - getActualPosition(self)
-        - _updateSurface(self)
-        - setColor(self, color)
 
     The parent widget class is as follows:
 
@@ -181,8 +171,20 @@ if True:
             # To be overridden by child classes
             pass
 
+***    - DO NOT OVERRIDE THESE METHODS
+        - draw(self, screen)
+        - setSize(self, width, height)
+        - setPosition(self, x, y)
+        - getSize(self)
+        - getPos(self)
+        - getActualSize(self)
+        - getActualPosition(self)
+        - _updateSurface(self)
+        - setColor(self, color) ***
 
-    Using the above Widget class as a base, generate a new Python class that defines a widget called "Date".
+
+    Here is an example, a widget that displays the date.
+    Notice HOW WE DO NOT OVERRIDE DRAW, WE ONLY OVERRIDE DRAWCOTENT.
 
     class Date(Widget):
         name = "Date"
@@ -237,21 +239,20 @@ messages = [
 ]
 
 def getWidgetCode(prompt):
+    print("Prompt to OpenAI:\n", prompt)
 
-    messages.append({"role": "user", "content": prompt})
-    
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=messages
+        messages=messages + [{"role": "user", "content": prompt}]
     )
 
     reply = completion.choices[0].message.content
-    messages.append({"role": "agent", "content": reply})
+    messages.append({"role": "tool", "content": reply})
 
     return reply
 
 def buildAssembly(requestedWidget, assemblyName):
-    prompt = f"Create a Python class that defines a widget with the requested description \'{requestedWidget}\' for TiledOS. The class should be named \'{assemblyName.replace(' ', '')}\', with the static name {assemblyName} and inherit from the Widget class provided. Ensure that preferred sizes are set. Ensure the widget has useful functionality and a visually appealing design. Import modules as needed."
+    prompt = f"Create a Python class that defines a widget with the requested description '{requestedWidget}' for TiledOS. The class should be named '{assemblyName.replace(" ", "")}', with the static name {assemblyName} and inherit from the Widget class provided. Ensure that preferred sizes are set. Ensure the widget has useful functionality and a visually appealing design. Import modules as needed."
 
     assemblyCode = getWidgetCode(prompt)
     
@@ -284,8 +285,19 @@ import data.uiData as uiData
 WIDGET_CLASS = {assemblyName.replace(" ", "")}
 ''')
         
-if __name__ == "__main__":
-    name = input("Enter the name of the widget you want to create: ")
-    description = input("Enter a brief description of the widget's functionality: ")
-    print("Building assembly...")
-    buildAssembly(description, name)
+def fixAssemblyError(errorMessage, assemblyName):
+    with open(f"assemblies/{assemblyName.replace(' ', '')}.py", "r") as f:
+        assemblyCode = f.read()
+    prompt = f"The following error was encountered when trying to use the widget class '{assemblyName.replace(' ', '')}' for TiledOS: '{errorMessage}'. Please fix the code to resolve the error while retaining the original functionality. Here is the existing code for reference:\n\n{assemblyCode}\n\nProvide the complete modified class definition only."
+
+    assemblyCode = getWidgetCode(prompt)
+    
+    with open(f"assemblies/{assemblyName.replace(" ", "")}.py", "w") as f:
+        f.write(f'''
+from widgets import *
+import data.uiData as uiData
+                
+{assemblyCode}
+
+WIDGET_CLASS = {assemblyName.replace(" ", "")}
+''')
