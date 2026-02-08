@@ -30,6 +30,7 @@ import threading
 import calendar as pycal
 import datetime as dt
 from datetime import date
+import subprocess
 
 widgetsPath = os.path.join("data", "widgets.json")
 
@@ -114,7 +115,8 @@ loadWidgetsState()
 
 pygame.init()
 pygame.font.init()
-actualScreen = pygame.display.set_mode((1366, 768))
+if args.user == "dev": actualScreen = pygame.display.set_mode((1366, 768))
+else: actualScreen = pygame.display.set_mode((1366, 768), pygame.FULLSCREEN)
 screen = pygame.Surface((uiData.screenWidth, uiData.screenHeight))
 pygame.display.set_caption("TiledOS")
 
@@ -670,3 +672,5 @@ if __name__ == "__main__":
         actualScreen.blit(scaled, (0, 0))
         pygame.display.flip()
         clock.tick(60)
+
+    if args.user == "client" and running == False: subprocess.run(["shutdown", "/s", "/t", "0"])
