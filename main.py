@@ -163,10 +163,10 @@ if __name__ == "__main__":
     builderTitleBar = components.snappingTitleBar("Create Assembly")
     builderPanel = components.widgetBuilderPanel()
 
-    builderNameInput = components.textFieldPanel(1100, 110, (-1, 550), fontSize=60, hint="Widget Name")
-    builderDescriptionInput = components.textFieldPanel(1100, 250, (-1, 680), fontSize=40, hint="Widget Description")
+    builderNameInput = components.textFieldPanel(1100, 110, (-1, 350), fontSize=60, hint="Widget Name")
+    builderDescriptionInput = components.textFieldPanel(1100, 150, (-1, 480), fontSize=40, hint="Widget Description")
 
-    builderAssembleButton = components.button("Assemble", 1100, 90, (-1, 950), fontSize=60)
+    builderAssembleButton = components.button("Assemble", 1100, 90, (-1, 480+150+10), fontSize=60)
 
     running = True
 
@@ -392,18 +392,18 @@ if __name__ == "__main__":
                     showActionPanel = not showActionPanel
                 
                 if showActionPanel:
-                        actionPanelOut = actionPanel.handleEvent(event)
-                        if actionPanelOut == "quit":
-                            running = False
-                        
-                        elif actionPanelOut == "toggleActionPanel":
-                            showActionPanel = not showActionPanel
+                    actionPanelOut = actionPanel.handleEvent(event)
+                    if actionPanelOut == "quit":
+                        running = False
+                    
+                    elif actionPanelOut == "toggleActionPanel":
+                        showActionPanel = not showActionPanel
 
-                        elif actionPanelOut == "back":
-                            uiData.currentPage = "main"
-                            actionPanel.setPage("main")
-                            reloadWidgets()
-                            showActionPanel = not showActionPanel
+                    elif actionPanelOut == "back":
+                        uiData.currentPage = "main"
+                        actionPanel.setPage("main")
+                        reloadWidgets()
+                        showActionPanel = not showActionPanel
                 else:
                     builderNameInput.handleEvent(event)
                     builderDescriptionInput.handleEvent(event)
@@ -414,8 +414,6 @@ if __name__ == "__main__":
                             if "assembleWidget" not in jobsToDo:
                                 print("append")
                                 jobsToDo.append("assembleWidget")
-                            
-            
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouseDownStartTime = time.time()
@@ -443,7 +441,7 @@ if __name__ == "__main__":
             builderDescriptionInput.tick(screen)
             builderAssembleButton.tick(screen)
 
-            displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 240)
+            displayWidget.overrideActualPosition((uiData.screenWidth - displayWidget.getActualSize()[0]) // 2, 150)
             displayWidget.tick(screen)
         
         elif uiData.currentPage == "calendar":
@@ -492,6 +490,8 @@ if __name__ == "__main__":
                         if uiData.cal_month > 12:
                             uiData.cal_month = 1
                             uiData.cal_year += 1
+
+                    else: uiData.currentPage = "main"
 
             # !!! Don't screen.fill() here
             # screen.fill((10, 10, 10))
@@ -646,17 +646,15 @@ if __name__ == "__main__":
 
                 # end calendar page
 
-        # always active 
-        if uiData.currentPage == "main": 
-            if mouseDownStartTime is not None:
-                elapsed = time.time() - mouseDownStartTime
-                if elapsed >= actionPanelHoldTime:
-                    if editMode: editMode = not editMode
-                    else: showActionPanel = not showActionPanel
-                    if not editMode: saveWidgetsState()
-                    mouseDownStartTime = None
+    # always active 
+        if mouseDownStartTime is not None:
+            elapsed = time.time() - mouseDownStartTime
+            if elapsed >= actionPanelHoldTime:
+                if editMode: editMode = not editMode
+                else: showActionPanel = not showActionPanel
+                if not editMode: saveWidgetsState()
+                mouseDownStartTime = None
         else:
-            showActionPanel = False
             mouseDownStartTime = None
 
         if showActionPanel and tActionPanelOpacity < 1: tActionPanelOpacity += 0.2
