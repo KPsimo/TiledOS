@@ -242,7 +242,7 @@ def getWidgetCode(prompt):
     print("Prompt to OpenAI:\n", prompt)
 
     completion = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         messages=messages + [{"role": "user", "content": prompt}]
     )
 

@@ -17,15 +17,21 @@ if not breakGuard.checkAllSecrets():
 import pygame
 import json
 import os
+import time
+import threading
+import subprocess
+import calendar as pycal
+import datetime as dt
+from datetime import date
+
 import uiTools
 import widgets
 import components
-import time
 import windowTools
 import widgetBuilder
-import data.uiData as uiData
 import testAssembly
-import threading
+import googleCalendarEndpoint
+import data.uiData as uiData
 
 widgetsPath = os.path.join("data", "widgets.json")
 
