@@ -627,6 +627,8 @@ class UpcomingAssignments(Widget):
 
         self.highlightedAssignment = None
 
+        self.linesPerCell = 2
+
     def drawContent(self):
         if UpcomingAssignments.assignments.empty:
             if UpcomingAssignments.fetching:
@@ -655,7 +657,7 @@ class UpcomingAssignments(Widget):
 
         else:
             if self.highlightedAssignment is None:
-                displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * 1.6))
+                displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * self.linesPerCell))
                 font = self.listFont
                 lineHeight = font.get_height() + 5
                 startY = (self.surface.get_height() - (lineHeight * len(displayAssignments))) // 2
@@ -696,6 +698,9 @@ class UpcomingAssignments(Widget):
                 startY = (self.surface.get_height() - totalHeight) // 2
 
                 assignmentStr = f"{self.highlightedAssignment['Name']}"
+                if len(assignmentStr) > 6*self.width:
+                    assignmentStr = assignmentStr[:6*int(self.width)] + "..."
+                
                 dueDate = self.highlightedAssignment['Due Date'][:10]
                 points = self.highlightedAssignment['Points']
 
@@ -746,14 +751,15 @@ class UpcomingAssignments(Widget):
 
     def clicked(self, mx, my):
         if self.highlightedAssignment is None:
-            displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * 2.5))
+            displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * self.linesPerCell))
             lineHeight = self.listFont.get_height() + 5
-            startY = (self.surface.get_height() - (lineHeight * len(displayAssignments))) // 2
+            totalHeight = lineHeight * len(displayAssignments)
+            startY = (self.surface.get_height() - totalHeight) // 2
             
             clickIndex = (my - startY) // lineHeight
 
             if 0 <= clickIndex < len(displayAssignments):
-                self.highlightedAssignment = UpcomingAssignments.assignments.iloc[clickIndex]
+                self.highlightedAssignment = displayAssignments.iloc[clickIndex]
 
         else:
             buttonWidth = self.surface.get_width() - self.surface.get_width() // 4

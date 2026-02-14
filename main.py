@@ -567,7 +567,6 @@ if __name__ == "__main__":
                     card_h = cell_h - pad * 2
 
                     cell_surface = pygame.Surface((card_w, card_h), pygame.SRCALPHA)
-                    # rounded corners + alpha
                     pygame.draw.rect(
                         cell_surface,
                         (uiData.widgetBackgroundColor[0], uiData.widgetBackgroundColor[1], uiData.widgetBackgroundColor[2], alpha),

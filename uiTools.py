@@ -57,6 +57,7 @@ def interpolateColors(startColor, endColor, t):
     return tuple(out)
 
 def wrapText(text, maxCharacters):
+    maxCharacters = int(maxCharacters)
     lines = text.splitlines()
     result = []
 
@@ -66,10 +67,15 @@ def wrapText(text, maxCharacters):
         
         for word in words:
             if len(line) + len(word) + (1 if line else 0) > maxCharacters:
-                result.append(line)
+                if line:
+                    result.append(line)
                 line = word
             else:
                 line += (" " if line else "") + word
+
+            while len(line) > maxCharacters:
+                result.append(line[:maxCharacters])
+                line = line[maxCharacters:]
 
         if line:
             result.append(line)
