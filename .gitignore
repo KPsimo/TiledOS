@@ -7,3 +7,4 @@ data/token.json
 shell.py
 .venv/
 .env
+data/assignments/assignments.json
