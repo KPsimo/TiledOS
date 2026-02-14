@@ -11,6 +11,7 @@ import googleTasksEndpoint
 import pandas as pd
 import threading
 import json
+import random
 
 # --- Widget Template --- #
 
@@ -737,6 +738,27 @@ class UpcomingAssignments(Widget):
                 buttonTextRect = buttonText.get_rect(center=(self.surface.get_width() // 2, buttonY + buttonHeight // 2))
                 self.surface.blit(buttonText, buttonTextRect)
 
+                arrowSize = buttonHeight // 3
+                pygame.draw.polygon(
+                    self.surface,
+                    (255, 255, 255),
+                    [
+                        (buttonX - arrowSize * 1.5, buttonY + buttonHeight // 2 - arrowSize // 2),
+                        (buttonX - arrowSize * 1.5, buttonY + buttonHeight // 2 + arrowSize // 2),
+                        (buttonX - arrowSize * 2.5, buttonY + buttonHeight // 2)
+                    ]
+                )
+
+                pygame.draw.polygon(
+                    self.surface,
+                    (255, 255, 255),
+                    [
+                        (buttonX + buttonWidth + arrowSize * 1.5, buttonY + buttonHeight // 2 - arrowSize // 2),
+                        (buttonX + buttonWidth + arrowSize * 1.5, buttonY + buttonHeight // 2 + arrowSize // 2),
+                        (buttonX + buttonWidth + arrowSize * 2.5, buttonY + buttonHeight // 2)
+                    ]
+                )
+
     def update(self):
         self.loadingArcAngle += 10
 
@@ -770,7 +792,21 @@ class UpcomingAssignments(Widget):
             if buttonX <= mx <= buttonX + buttonWidth and buttonY <= my <= buttonY + buttonHeight:
                 UpcomingAssignments.completed.add(self.highlightedAssignment.name)
             
-            self.highlightedAssignment = None
+            arrowSize = buttonHeight // 3
+            leftArrowX = buttonX - arrowSize * 2.5
+            rightArrowX = buttonX + buttonWidth + arrowSize * 2.5
+            arrowY = buttonY + buttonHeight // 2
+            
+            if abs(mx - leftArrowX) < arrowSize * 1.5 and abs(my - arrowY) < arrowSize * 1.5:
+                currentIndex = UpcomingAssignments.assignments.index.get_loc(self.highlightedAssignment.name)
+                if currentIndex > 0:
+                    self.highlightedAssignment = UpcomingAssignments.assignments.iloc[currentIndex - 1]
+            elif abs(mx - rightArrowX) < arrowSize * 1.5 and abs(my - arrowY) < arrowSize * 1.5:
+                currentIndex = UpcomingAssignments.assignments.index.get_loc(self.highlightedAssignment.name)
+                if currentIndex < len(UpcomingAssignments.assignments) - 1:
+                    self.highlightedAssignment = UpcomingAssignments.assignments.iloc[currentIndex + 1]
+            
+            else: eself.highlightedAssignment = None
 
 class Taskboard(Widget):
     preferredSizes = [(4, 3), (8, 6)]
@@ -833,6 +869,70 @@ class Taskboard(Widget):
             task = self.tasksCompleted.pop(clickIndex - len(self.tasksToDo))
             self.tasksToDo.append(task)
 
+# --- Decorative Widgets --- #
+class SpinningSquare(Widget):
+    preferredSizes = [(1, 1), (2, 2), (3, 3), (4, 4)]
+    def __init__(self, width=1, height=1, pos=(0, 3), color=None, speed=0.06, size_ratio=0.6):
+        super().__init__(width, height, pos)
+        self.speed = float(speed)           # degrees per millisecond
+        self.size_ratio = float(size_ratio) # fraction of widget area used by square
+        self.angle = 0.0
+        self.square_color = color if color is not None else uiData.textColor
+
+    def drawContent(self):
+        # update angle based on global ticks so it rotates even without explicit update() calls
+        self.angle = (pygame.time.get_ticks() * self.speed) % 360
+
+        sw, sh = self.surface.get_size()
+        side = max(1, int(min(sw, sh) * self.size_ratio))
+
+        # create square surface and draw filled rounded rect
+        sq = pygame.Surface((side, side), pygame.SRCALPHA)
+        pygame.draw.rect(sq, self.square_color, sq.get_rect(), border_radius=max(1, side // 8))
+
+        # rotate and blit centered
+        rotated = pygame.transform.rotate(sq, self.angle)
+        rrect = rotated.get_rect(center=(sw // 2, sh // 2))
+        self.surface.blit(rotated, rrect)
+    
+    def update(self):
+        if self.speed > 0.06:
+            self.speed = max(0.06, self.speed - 0.001)
+    
+    def clicked(self, mx, my):
+        self.speed += .5
+
+class Space(Widget):
+    name = "Space"
+    
+    def __init__(self, width=2, height=2, pos=(0, 0)):
+        super().__init__(width, height, pos)
+        self.stars = self._generateStars()
+        
+    def _generateStars(self):
+        size = self.getActualSize()
+        return [(random.randint(0, size[0]), random.randint(0, size[1]), random.uniform(0.05, 1)) for _ in range(max(10, self.width * self.height * 5))]
+    
+    def _updateSurface(self):
+        super()._updateSurface()
+        self.stars = self._generateStars()
+        
+    def update(self):
+        size = self.getActualSize()
+        for i, star in enumerate(self.stars):
+            x, y, alpha = star
+            new_alpha = max(0.05, alpha - 0.01) if alpha > 0.05 else random.uniform(0.05, 1)
+            self.stars[i] = (x % size[0], y % size[1], new_alpha)
+        
+    def drawContent(self):
+        if self.sizeSnapped:
+            for star in self.stars:
+                alpha = int(star[2] * 255)
+                pygame.draw.circle(self.surface, (255, 255, 255, alpha), (int(star[0]), int(star[1])), 2)
+
+    def clicked(self, mx, my):
+        self.stars = self._generateStars()
+
 # --- Initialize UpcomingAssignments --- #
 UpcomingAssignments.assignments = UpcomingAssignments.loadAssignments()
 
@@ -851,7 +951,9 @@ def reloadWidgets():
         "Pomodoro Timer": PomodoroTimer(),
         "Sticky Note": StickyNote(),
         "Upcoming": UpcomingAssignments(),
-        "Taskboard": Taskboard()
+        "Taskboard": Taskboard(),
+        "Spinning Square": SpinningSquare(),
+        "Space": Space()
     }
 
     def addWidget(widgetName, widget):
