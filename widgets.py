@@ -10,6 +10,7 @@ import canvasEndpoint
 import googleTasksEndpoint
 import pandas as pd
 import threading
+import json
 
 # --- Widget Template --- #
 
@@ -269,7 +270,6 @@ class DisplayWidget(Widget):
         self.creating = False
 
     def drawContent(self):
-        # draw a rotating question mark for demonstration
         if self.creating:
             font = pygame.font.Font('resources/outfit.ttf', 30)
             text = font.render("Assembling...", True, uiData.textColor)
@@ -559,13 +559,46 @@ class UpcomingAssignments(Widget):
     assignments = pd.DataFrame()
     fetching = True
     completed = set()
+    assignmentsPath = os.path.join("data", "assignments")
+
+    @staticmethod
+    def ensureAssignmentsDir():
+        if not os.path.exists(UpcomingAssignments.assignmentsPath):
+            os.makedirs(UpcomingAssignments.assignmentsPath)
+
+    @staticmethod
+    def saveAssignments(assignments):
+        UpcomingAssignments.ensureAssignmentsDir()
+        try:
+            assignments_dict = {
+                "assignments": assignments.to_dict(orient='records') if not assignments.empty else []
+            }
+            filepath = os.path.join(UpcomingAssignments.assignmentsPath, "assignments.json")
+            with open(filepath, 'w') as f:
+                json.dump(assignments_dict, f, indent=4)
+        except Exception as e:
+            print(f"Error saving assignments: {e}")
+
+    @staticmethod
+    def loadAssignments():
+        try:
+            filepath = os.path.join(UpcomingAssignments.assignmentsPath, "assignments.json")
+            if os.path.exists(filepath):
+                with open(filepath, 'r') as f:
+                    data = json.load(f)
+                    if data.get("assignments"):
+                        return pd.DataFrame(data["assignments"])
+        except Exception as e:
+            print(f"Error loading assignments: {e}")
+        return pd.DataFrame()
 
     @staticmethod
     def fetchAssignments():
         UpcomingAssignments.assignments = canvasEndpoint.getAllCurrentAssignments()
         UpcomingAssignments.assignments = UpcomingAssignments.assignments.sort_values(by=['Due Date'])
+        UpcomingAssignments.saveAssignments(UpcomingAssignments.assignments)
         UpcomingAssignments.fetching = False
-
+    
     threading.Thread(target=fetchAssignments, daemon=True).start()
 
     preferredSizes = [(3, 2), (6, 4)]
@@ -577,13 +610,13 @@ class UpcomingAssignments(Widget):
         self.subtitleFonts = []
         self.buttonFonts = []
 
-        for size in [18, 36, 54, 72, 90, 108, 126, 144, 162, 180]:
+        for size in [16, 16, 50, 50, 90, 108, 126, 144, 162, 180]:
             self.titleFonts.append(pygame.font.Font('resources/outfit.ttf', size))
         
-        for size in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
+        for size in [12, 12, 34, 34, 60, 72, 84, 96, 108, 120]:
             self.subtitleFonts.append(pygame.font.Font('resources/outfit.ttf', size))
 
-        for size in [9, 18, 27, 36, 45, 54, 63, 72, 81, 90]:
+        for size in [9, 9, 27, 27, 45, 54, 63, 72, 81, 90]:
             self.buttonFonts.append(pygame.font.Font('resources/outfit.ttf', size))
 
         self.listFont = pygame.font.Font('resources/outfit.ttf', 28)
@@ -622,7 +655,7 @@ class UpcomingAssignments(Widget):
 
         else:
             if self.highlightedAssignment is None:
-                displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * 2.5))
+                displayAssignments = UpcomingAssignments.assignments.head(math.floor(self.height * 1.6))
                 font = self.listFont
                 lineHeight = font.get_height() + 5
                 startY = (self.surface.get_height() - (lineHeight * len(displayAssignments))) // 2
@@ -763,6 +796,8 @@ class Taskboard(Widget):
             startY = (self.surface.get_height() - (lineHeight * lotalLines)) // 2
 
             for i, line in enumerate(todoLines):
+                if len(line) > 6*self.width:
+                    line = line[:6*int(self.width)] + "..."
                 text = self.font.render(line, True, uiData.textColor)
                 textRect = text.get_rect(center=(self.surface.get_width() // 2, startY + i * lineHeight + lineHeight // 2))
                 self.surface.blit(text, textRect)
@@ -791,6 +826,9 @@ class Taskboard(Widget):
         elif len(self.tasksToDo) <= clickIndex < lotalLines:
             task = self.tasksCompleted.pop(clickIndex - len(self.tasksToDo))
             self.tasksToDo.append(task)
+
+# --- Initialize UpcomingAssignments --- #
+UpcomingAssignments.assignments = UpcomingAssignments.loadAssignments()
 
 # --- Import Widgets & Assemblies --- #
 

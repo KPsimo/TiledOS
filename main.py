@@ -561,7 +561,7 @@ if __name__ == "__main__":
                     in_current_month = (day.month == uiData.cal_month)
 
                     # remi-transparent cell cards (spillover more transparent) 
-                    alpha = 240 if in_current_month else 190  # tweak: current 130-160, spillover 60-100
+                    alpha = 240 if in_current_month else 130  # tweak: current 130-160, spillover 60-100
 
                     card_w = cell_w - pad * 2
                     card_h = cell_h - pad * 2
@@ -570,7 +570,7 @@ if __name__ == "__main__":
                     # rounded corners + alpha
                     pygame.draw.rect(
                         cell_surface,
-                        (50, 50, 50, alpha),
+                        (uiData.widgetBackgroundColor[0], uiData.widgetBackgroundColor[1], uiData.widgetBackgroundColor[2], alpha),
                         (0, 0, card_w, card_h),
                         border_radius=10
                     )
