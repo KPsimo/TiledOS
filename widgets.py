@@ -806,7 +806,7 @@ class UpcomingAssignments(Widget):
                 if currentIndex < len(UpcomingAssignments.assignments) - 1:
                     self.highlightedAssignment = UpcomingAssignments.assignments.iloc[currentIndex + 1]
             
-            else: eself.highlightedAssignment = None
+            else: self.highlightedAssignment = None
 
 class Taskboard(Widget):
     preferredSizes = [(4, 3), (8, 6)]
