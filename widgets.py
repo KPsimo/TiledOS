@@ -953,7 +953,8 @@ def reloadWidgets():
         "Upcoming": UpcomingAssignments(),
         "Taskboard": Taskboard(),
         "Spinning Square": SpinningSquare(),
-        "Space": Space()
+        "Space": Space(),
+        "Widget": Widget()
     }
 
     def addWidget(widgetName, widget):
