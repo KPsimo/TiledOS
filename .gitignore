@@ -8,3 +8,4 @@ shell.py
 .venv/
 .env
 data/assignments/assignments.json
+data/tasks.json
