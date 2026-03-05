@@ -23,6 +23,7 @@ import subprocess
 import calendar as pycal
 import datetime as dt
 from datetime import date
+from collections import defaultdict
 
 import uiTools
 import widgets
@@ -61,7 +62,7 @@ def loadWidgetsState():
                 widget.setPosition(state["pos"][0], state["pos"][1])
                 widget.setSize(state["width"], state["height"])
                 addWidget(name, widget)
-    #loaded before widgets.allWidgets
+    # loaded before widgets.allWidgets
     except Exception as e:
         print(f"Error loading widgets state: {e}")
 
@@ -145,6 +146,35 @@ if sys.platform == "win32":
     SW_RESTORE = 9
 
 clock = pygame.time.Clock()
+
+# Calendar event cache (avoid calling Google API every frame)
+calendar_events_cache = {
+    "key": None,               # (year, month)
+    "grid_start": None,         # datetime.date
+    "grid_end": None,           # datetime.date (exclusive)
+    "events_by_date": None,     # dict[datetime.date -> list[dict]]
+    "loading": False,
+    "error": None,
+}
+calendar_events_lock = threading.Lock()
+
+def _calendar_fetch_month_events(year: int, month: int):
+    # Loads events for the visible 6-row month grid and stores them into memory.
+    try:
+        grid_start, grid_end, by_date = googleCalendarEndpoint.get_events_by_date_for_month_grid(
+            year, month, calendar_id="primary"
+        )
+        with calendar_events_lock:
+            calendar_events_cache["key"] = (year, month)
+            calendar_events_cache["grid_start"] = grid_start
+            calendar_events_cache["grid_end"] = grid_end
+            calendar_events_cache["events_by_date"] = by_date
+            calendar_events_cache["loading"] = False
+            calendar_events_cache["error"] = None
+    except Exception as e:
+        with calendar_events_lock:
+            calendar_events_cache["loading"] = False
+            calendar_events_cache["error"] = str(e)
 
 if __name__ == "__main__":
     bgPath = os.path.join("resources", "backgrounds", "default-dark.jpg")
@@ -339,7 +369,7 @@ if __name__ == "__main__":
                             mx, my = event.pos
                             dx = mx - mouseDownPos[0]
                             dy = my - mouseDownPos[1]
-                            if abs(dx) > 6 or abs(dy) > 6:
+                            if abs(dx) > 16 or abs(dy) > 16:
                                 mouseDownStartTime = None
 
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
@@ -453,6 +483,21 @@ if __name__ == "__main__":
             # Responsive layout
             W, H = uiData.screenWidth, uiData.screenHeight
 
+            # Pull month events into memory only when the month changes
+            with calendar_events_lock:
+                need_fetch = (calendar_events_cache["key"] != (uiData.cal_year, uiData.cal_month)) and (not calendar_events_cache["loading"])
+
+            if need_fetch:
+                with calendar_events_lock:
+                    calendar_events_cache["loading"] = True
+                    calendar_events_cache["error"] = None
+
+                threading.Thread(
+                    target=_calendar_fetch_month_events,
+                    args=(uiData.cal_year, uiData.cal_month),
+                    daemon=True
+                ).start()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -551,6 +596,12 @@ if __name__ == "__main__":
                 month_days.append(next_week)
             month_days = month_days[:6]
 
+            # Grab cached events map for quick rendering
+            with calendar_events_lock:
+                events_by_date = calendar_events_cache["events_by_date"] or {}
+                events_loading = calendar_events_cache["loading"]
+                events_error = calendar_events_cache["error"]
+
             pad = max(2, min(8, int(min(cell_w, cell_h) * 0.06)))  # scales with cell size
 
             for row, week in enumerate(month_days):
@@ -560,7 +611,7 @@ if __name__ == "__main__":
 
                     in_current_month = (day.month == uiData.cal_month)
 
-                    # remi-transparent cell cards (spillover more transparent) 
+                    # remi-transparent cell cards (spillover more transparent)
                     alpha = 240 if in_current_month else 130  # tweak: current 130-160, spillover 60-100
 
                     card_w = cell_w - pad * 2
@@ -575,13 +626,13 @@ if __name__ == "__main__":
                     )
                     screen.blit(cell_surface, (x + pad, y + pad))
 
-                    # text labels 
+                    # text labels
                     if in_current_month:
                         text_color = uiData.textColor
                         label = str(day.day)
                     else:
                         text_color = (160, 160, 160)
-                        # show "Aug 1" / "Sep 1" on month boundary like your screenshot
+                        # show "Aug 1" / "Sep 1" on month boundary
                         if day.day == 1:
                             label = f"{day.strftime('%b')} {day.day}"
                         else:
@@ -590,60 +641,108 @@ if __name__ == "__main__":
                     num_surf = num_font.render(label, True, text_color)
                     screen.blit(num_surf, (x + pad + 6, y + pad + 6))
 
-                # --- Simple white chevron navigation arrows (inside grid, not on cells) ---
-                hint_surface = pygame.Surface((W, H), pygame.SRCALPHA)
+                    # Event rendering (uses in-memory cache; no API calls in the frame loop)
+                    day_events = events_by_date.get(day, [])
 
-                # Vertically center on the grid
-                arrow_cy = grid_top + (rows * cell_h) // 2
+                    
+                    # Show up to 2 event titles + "+N events" if more exist
+                    if day_events:
+                        event_font = pygame.font.Font("resources/outfit.ttf", max(14, int(H * 0.020)))
+                        more_font  = pygame.font.Font("resources/outfit.ttf", max(13, int(H * 0.018)))
 
-                # Chevron sizing
-                arrow_size = max(18, int(min(W, H) * 0.018))
-                arrow_thickness = 6
+                        max_lines = 2
+                        text_x = x + pad + 8
+                        text_y = y + pad + 30
+                        max_text_w = card_w - 16
 
-                # Solid white
-                arrow_color = (255, 255, 255, 255)
+                        shown = min(max_lines, len(day_events))
 
-                # Grid bounds
-                grid_left  = grid_x
-                grid_right = grid_x + (cols * cell_w)
+                        # Render first N titles
+                        for i in range(shown):
+                            title = day_events[i].get("summary", "(No title)")
 
-                # Card bounds (cards inset by pad)
-                first_card_left = grid_left + pad
-                last_card_right = grid_right - pad
+                            # Clip long titles
+                            while event_font.size(title)[0] > max_text_w and len(title) > 3:
+                                title = title[:-4] + "..."
 
-                # Place arrows in the gutter between grid edge and cards
-                left_x = grid_left + (first_card_left - grid_left) * 1 // 4
-                right_x = grid_right - (grid_right - last_card_right) * 1 // 4
+                            t_surf = event_font.render(title, True, (220, 220, 220))
+                            screen.blit(t_surf, (text_x, text_y + i * (event_font.get_height() + 2)))
 
-                # LEFT chevron  <
-                pygame.draw.lines(
-                    hint_surface,
-                    arrow_color,
-                    False,
-                    [
-                        (left_x + arrow_size // 2, arrow_cy - arrow_size // 2),
-                        (left_x - arrow_size // 2, arrow_cy),
-                        (left_x + arrow_size // 2, arrow_cy + arrow_size // 2),
-                    ],
-                    arrow_thickness
-                )
+                        # Render "+N events" if overflow
+                        remaining = len(day_events) - shown
+                        if remaining > 0:
+                            more_label = f"+{remaining} event" if remaining == 1 else f"+{remaining}"
+                            more_surf = more_font.render(more_label, True, (200, 200, 200))
 
-                # RIGHT chevron  >
-                pygame.draw.lines(
-                    hint_surface,
-                    arrow_color,
-                    False,
-                    [
-                        (right_x - arrow_size // 2, arrow_cy - arrow_size // 2),
-                        (right_x + arrow_size // 2, arrow_cy),
-                        (right_x - arrow_size // 2, arrow_cy + arrow_size // 2),
-                    ],
-                    arrow_thickness
-                )
+                            # place it right under the last shown line
+                            more_y = text_y + shown * (event_font.get_height() + 2) + 2
+                            screen.blit(more_surf, (text_x, more_y))
 
-                screen.blit(hint_surface, (0, 0))
 
-                # end calendar page
+            # Loading/error indicator (non-blocking)
+            if events_loading:
+                info_font = pygame.font.Font("resources/outfit.ttf", max(16, int(H * 0.022)))
+                info_surf = info_font.render("Loading events...", True, (220, 220, 220))
+                screen.blit(info_surf, (margin_x, grid_top - 30))
+            elif events_error:
+                info_font = pygame.font.Font("resources/outfit.ttf", max(16, int(H * 0.022)))
+                info_surf = info_font.render("Events failed to load", True, (255, 180, 180))
+                screen.blit(info_surf, (margin_x, grid_top - 30))
+
+            # --- Simple white chevron navigation arrows (inside grid, not on cells) ---
+            hint_surface = pygame.Surface((W, H), pygame.SRCALPHA)
+
+            # Vertically center on the grid
+            arrow_cy = grid_top + (rows * cell_h) // 2
+
+            # Chevron sizing
+            arrow_size = max(18, int(min(W, H) * 0.018))
+            arrow_thickness = 6
+
+            # Solid white
+            arrow_color = (255, 255, 255, 255)
+
+            # Grid bounds
+            grid_left  = grid_x
+            grid_right = grid_x + (cols * cell_w)
+
+            # Card bounds (cards inset by pad)
+            first_card_left = grid_left + pad
+            last_card_right = grid_right - pad
+
+            # Place arrows in the gutter between grid edge and cards
+            left_x = grid_left + (first_card_left - grid_left) * 1 // 4
+            right_x = grid_right - (grid_right - last_card_right) * 1 // 4
+
+            # LEFT chevron  <
+            pygame.draw.lines(
+                hint_surface,
+                arrow_color,
+                False,
+                [
+                    (left_x + arrow_size // 2, arrow_cy - arrow_size // 2),
+                    (left_x - arrow_size // 2, arrow_cy),
+                    (left_x + arrow_size // 2, arrow_cy + arrow_size // 2),
+                ],
+                arrow_thickness
+            )
+
+            # RIGHT chevron  >
+            pygame.draw.lines(
+                hint_surface,
+                arrow_color,
+                False,
+                [
+                    (right_x - arrow_size // 2, arrow_cy - arrow_size // 2),
+                    (right_x + arrow_size // 2, arrow_cy),
+                    (right_x - arrow_size // 2, arrow_cy + arrow_size // 2),
+                ],
+                arrow_thickness
+            )
+
+            screen.blit(hint_surface, (0, 0))
+
+            # end calendar page
 
     # always active 
         if mouseDownStartTime is not None:
